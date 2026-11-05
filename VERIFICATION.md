@@ -1,5 +1,16 @@
 # Verification record
 
+## Enemy cover update
+
+- `npm test`: 15/15 passing, including seven new combat tests. These exercise actual collision-respecting travel to shelter, crouching, stand/side peeks, burst spacing, magazine reloads, sight loss mid-burst, withdrawal when injured, cover invalidation after an observed angle change, hearing while concealed, and lowered hit volumes.
+- `npm run build`: successful with the new cover module and articulated crouch pose.
+- Another real browser mission completed with the updated enemy AI: 1:03, hostage extracted, both teammates operational, six threats stopped. Player weapon use was not required on this run; teammates performed the engagements. This verifies mission continuity, not a claim that difficulty or balance is final.
+- An isolated simulation trace verified repeated move → hide → peek → return cycles and reloading. A regression assertion caught and fixed an arrival-tolerance issue: enemies initially stopped near the intended safe point but could still be exposed at a corner. Cover navigation now finishes within 8 cm, with hide candidates farther inside the edge.
+- Browser input continues to use the documented windowed mode for automation. Captured-mouse and subjective audio verification limits below still apply.
+- An isolated browser fixture visibly confirmed the crouched hide pose at 3.0 seconds and standing side-peek/fire at 6.0 seconds, with no browser runtime errors. Screenshot: `artifacts/enemy-cover.jpg`. This is an observer view of a test scenario, not a gameplay screenshot.
+
+## Original vertical slice
+
 Verified in this Windows workspace on November 4, 2026 (America/Denver).
 
 ## Passed

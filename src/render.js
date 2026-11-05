@@ -132,32 +132,37 @@ export class GameView {
   }
   character(actor) {
     const g = new THREE.Group(), friendly = actor.type === 'friend', hostage = actor.type === 'hostage';
+    const upper = new THREE.Group(); g.add(upper);
     const cloth = this.mat(hostage ? 0xb9b6a2 : friendly ? 0x66756a : 0x666052);
     const vest = this.mat(friendly ? 0x394d49 : 0x3b4241), skin = this.mat(0xa9967f), black = this.mat(0x222d2c), helmet = this.mat(friendly ? 0x6a7865 : 0x464b46);
-    this.box(.5, .65, .28, 0, 1.16, 0, cloth, g);
+    this.box(.5, .65, .28, 0, 1.16, 0, cloth, upper);
     if (!hostage) {
-      this.box(.54, .43, .36, 0, 1.22, 0, vest, g);
-      for (const x of [-.17, 0, .17]) this.box(.13, .18, .1, x, 1.14, -.22, helmet, g);
-      this.box(.37, .4, .19, 0, 1.23, .23, vest, g);
+      this.box(.54, .43, .36, 0, 1.22, 0, vest, upper);
+      for (const x of [-.17, 0, .17]) this.box(.13, .18, .1, x, 1.14, -.22, helmet, upper);
+      this.box(.37, .4, .19, 0, 1.23, .23, vest, upper);
     }
-    this.mesh(new THREE.SphereGeometry(.18, 10, 8), skin, 0, 1.67, 0, g);
+    this.mesh(new THREE.SphereGeometry(.18, 10, 8), skin, 0, 1.67, 0, upper);
     if (!hostage) {
-      const cap = this.mesh(new THREE.SphereGeometry(.215, 10, 8, 0, Math.PI * 2, 0, Math.PI * .6), helmet, 0, 1.72, 0, g);
-      this.box(.29, .08, .11, 0, 1.7, -.17, black, g);
+      const cap = this.mesh(new THREE.SphereGeometry(.215, 10, 8, 0, Math.PI * 2, 0, Math.PI * .6), helmet, 0, 1.72, 0, upper);
+      this.box(.29, .08, .11, 0, 1.7, -.17, black, upper);
       if (friendly) {
-        for (const x of [-.1, .1]) this.cylinder(.04, .04, .1, x, 1.79, -.24, black, g).rotation.x = Math.PI / 2;
-        this.box(.14, .045, .018, .28, 1.34, -.04, this.mat(0xa6d9cc, .6, { emissive: 0x49877c, emissiveIntensity: .5 }), g);
+        for (const x of [-.1, .1]) this.cylinder(.04, .04, .1, x, 1.79, -.24, black, upper).rotation.x = Math.PI / 2;
+        this.box(.14, .045, .018, .28, 1.34, -.04, this.mat(0xa6d9cc, .6, { emissive: 0x49877c, emissiveIntensity: .5 }), upper);
       }
       cap.castShadow = true;
     }
     const limbs = [];
     for (const x of [-.16, .16]) {
       const leg = new THREE.Group(); leg.position.set(x, .88, 0); g.add(leg);
-      this.box(.2, .65, .24, 0, -.32, 0, cloth, leg); this.box(.21, .2, .33, 0, -.72, -.035, black, leg); limbs.push(leg);
-      const arm = this.box(.17, .55, .19, x * 1.95, 1.18, hostage ? .05 : -.14, cloth, g); arm.rotation.x = hostage ? -.15 : -.65;
+      this.box(.2, .35, .24, 0, -.175, 0, cloth, leg);
+      const knee = new THREE.Group(); knee.position.y = -.35; leg.add(knee);
+      this.box(.18, .35, .21, 0, -.175, 0, cloth, knee); this.box(.21, .15, .33, 0, -.43, -.035, black, knee);
+      leg.userData.knee = knee; limbs.push(leg);
+      const arm = this.box(.17, .55, .19, x * 1.95, 1.18, hostage ? .05 : -.14, cloth, upper); arm.rotation.x = hostage ? -.15 : -.65;
     }
-    if (!hostage) { this.box(.11, .14, .7, .19, 1.18, -.46, black, g); this.box(.045, .045, .35, .19, 1.22, -.95, black, g); }
-    g.userData = { limbs }; this.scene.add(g); this.actorMeshes.set(actor.id, g); return g;
+    const rifle = new THREE.Group(); rifle.position.set(.19, 1.22, -.18); upper.add(rifle);
+    if (!hostage) { this.box(.11, .14, .7, 0, -.04, -.28, black, rifle); this.box(.045, .045, .35, 0, 0, -.77, black, rifle); }
+    g.userData = { limbs, upper, rifle }; this.scene.add(g); this.actorMeshes.set(actor.id, g); return g;
   }
   buildWeapon() {
     const g = new THREE.Group(); this.camera.add(g); this.gun = g;
@@ -226,7 +231,15 @@ export class GameView {
       const mesh = this.actorMeshes.get(actor.id); if (!mesh) continue;
       mesh.position.set(actor.x, actor.hp <= 0 ? .2 : 0, actor.z); mesh.rotation.y = actor.yaw;
       mesh.rotation.z = actor.hp <= 0 ? Math.PI / 2 : 0;
-      mesh.userData.limbs.forEach((leg, i) => { leg.rotation.x = actor.hp > 0 && actor.moving ? Math.sin(sim.time * 9 + i * Math.PI) * .4 : 0; });
+      const blend = Math.min(1, dt * 16), crouch = actor.hp > 0 && actor.crouch;
+      mesh.userData.upper.position.y = THREE.MathUtils.lerp(mesh.userData.upper.position.y, crouch ? -.63 : 0, blend);
+      mesh.userData.rifle.rotation.x = THREE.MathUtils.lerp(mesh.userData.rifle.rotation.x, actor.reload ? -.6 : 0, blend);
+      mesh.userData.limbs.forEach((leg, i) => {
+        const stride = actor.hp > 0 && actor.moving ? Math.sin(sim.time * 9 + i * Math.PI) * .4 : 0;
+        leg.position.y = THREE.MathUtils.lerp(leg.position.y, crouch ? .46 : .88, blend);
+        leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, crouch ? -1.2 : stride, blend);
+        leg.userData.knee.rotation.x = THREE.MathUtils.lerp(leg.userData.knee.rotation.x, crouch ? 2.1 : Math.max(0, -stride), blend);
+      });
     }
     this.kick = Math.max(0, this.kick - dt * 9); this.flashTimer = Math.max(0, (this.flashTimer || 0) - dt);
     this.flash.visible = this.flashTimer > 0; this.flashLight.intensity = this.flashTimer > 0 ? 7 : 0;

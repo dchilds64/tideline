@@ -56,6 +56,7 @@ export class FieldAudio {
     if (e.type === 'step') this.burst(.12, e.soft ? .09 : .18, 290);
     if (e.type === 'reload') { this.burst(.18, .22, 1800); }
     if (e.type === 'reload-done') this.burst(.15, .3, 2200);
+    if (e.type === 'ai-reload') this.burst(.2, .2, 1800, e.from);
     if (e.type === 'hit') this.tone(1050, .045, .035);
     if (e.type === 'empty') this.burst(.035, .13, 3300);
     if (e.type === 'hurt') { this.tone(65, .25, .24); this.burst(.15, .3, 500); }
