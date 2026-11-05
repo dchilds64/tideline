@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { SOLIDS, EXTRACT, HOSTAGE } from './world.js';
+import { weaponOrientation } from './weapon.js';
 
 export class GameView {
   constructor(canvas) {
@@ -191,6 +192,7 @@ export class GameView {
     g.traverse(m => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = false; m.frustumCulled = false; } });
   }
   bind(sim) {
+    this.kick = 0; this.flashTimer = 0;
     for (const mesh of this.actorMeshes.values()) { this.scene.remove(mesh); mesh.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); }
     this.actorMeshes.clear(); for (const actor of [...sim.friends, ...sim.enemies, sim.hostage]) this.character(actor);
     for (const effect of this.effects) { this.scene.remove(effect.mesh); effect.mesh.geometry.dispose(); effect.mesh.material.dispose(); } this.effects = [];
@@ -211,17 +213,16 @@ export class GameView {
   render(sim, dt, mode) {
     const t = performance.now() / 1000, p = sim.player, playingView = mode !== 'menu';
     if (playingView) {
-      const eye = p.crouch ? 1.02 : 1.68;
-      this.bob += dt * (p.moving ? p.sprint ? 15 : 9 : 0);
-      const bob = p.moving ? Math.sin(this.bob) * (p.aim ? .008 : p.sprint ? .043 : .023) : 0;
+      const w = p.weapon, orientation = weaponOrientation(p);
+      this.bob = w.stepPhase;
       this.camera.position.x = p.x; this.camera.position.z = p.z;
-      this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y || eye, eye + bob, Math.min(1, dt * 14));
-      this.camera.rotation.set(p.pitch + this.kick * .008, p.yaw, p.moving && !p.aim ? Math.sin(this.bob * .5) * .003 : 0);
-      const fov = p.aim ? 53 : p.sprint ? 83 : 76; this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, fov, Math.min(1, dt * 12)); this.camera.updateProjectionMatrix();
+      this.camera.position.y = w.eye;
+      this.camera.rotation.set(orientation.pitch, orientation.yaw, 0);
+      this.camera.fov = 76 - w.aim * 23 + (p.sprint ? 7 : 0); this.camera.updateProjectionMatrix();
       const reload = p.reload ? Math.sin((1 - p.reload / 2.35) * Math.PI) : 0;
-      const x = p.aim ? 0 : .24, y = p.aim ? -.15 : -.24, z = p.aim ? -.2 : -.32;
-      this.gun.position.lerp(new THREE.Vector3(x + (p.moving && !p.aim ? Math.sin(this.bob * .5) * .012 : 0), y - reload * .22 - (p.sprint ? .1 : 0), z + this.kick * .05), Math.min(1, dt * 16));
-      this.gun.rotation.set(this.kick * .035 - reload * .4 - (p.sprint ? .25 : 0), reload * .25, reload * -.55);
+      const x = .24 * (1 - w.aim), y = -.24 + w.aim * .09, z = -.32 + w.aim * .12, lowered = w.lowReady / .3;
+      this.gun.position.set(x + Math.sin(this.bob * .5) * .012 * w.motion * (1 - w.aim), y - reload * .22 - lowered * .1, z + this.kick * .05);
+      this.gun.rotation.set(this.kick * .035 - reload * .4 - lowered * .25, reload * .25, reload * -.55);
       this.torch.intensity = p.light ? 38 : 0;
     } else {
       this.camera.position.set(28 + Math.sin(t * .035) * 3, 14, 31); this.camera.lookAt(0, 1, -3); this.camera.fov = 66; this.camera.updateProjectionMatrix(); this.torch.intensity = 0;

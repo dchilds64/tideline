@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/simulation.js';
 import { chooseCover, protects } from '../src/cover.js';
+import { weaponOrientation, shotDirection } from '../src/weapon.js';
+import { PerspectiveCamera, Vector3 } from 'three';
 import { SOLIDS, EXTRACT, HOSTAGE, blocked, moveBody, visible, findPath, dist } from '../src/world.js';
 
 const advance = (sim, seconds, input = {}) => { for (let t = 0; t < seconds; t += .05) sim.tick(.05, input); };
@@ -184,4 +186,63 @@ test('crouched enemy hit detection follows the lowered body and cover blocks rou
   Object.assign(sim.player, { x: 4, z: 12, cooldown: 0 }); Object.assign(enemy, { x: 4, z: 5.65, hp: 68 });
   const bodyY = .52 - 1.68, bodyDistance = Math.hypot(bodyY, 6.35);
   sim.shoot({ x: 0, y: bodyY / bodyDistance, z: -6.35 / bodyDistance }); assert.equal(enemy.hp, 68, 'sandbags stop shots aimed at hidden torso');
+});
+
+test('aim takes time to raise and sprint recovery blocks firing without consuming ammunition', () => {
+  const sim = safeSim(), p = sim.player;
+  sim.tick(.05, { aim: true }); assert.ok(p.weapon.aim > 0 && p.weapon.aim < .25);
+  advance(sim, .35, { aim: true }); assert.equal(p.weapon.aim, 1);
+  advance(sim, .5, { sprint: true, forward: 1 });
+  assert.equal(p.weapon.aim, 0); assert.equal(sim.shoot(), false);
+  advance(sim, .15, { aim: true }); assert.equal(sim.shoot(), false); assert.equal(p.ammo, 30);
+  advance(sim, .2, { aim: true }); assert.equal(sim.shoot(), true);
+  assert.ok(p.weapon.aim < 1, 'rifle is available before the sight picture fully settles');
+});
+
+test('moving degrades precision, stopping settles it and crouching provides support', () => {
+  const sim = safeSim(), p = sim.player;
+  advance(sim, 1, { aim: true }); const steady = p.weapon.spread;
+  advance(sim, .6, { aim: true, side: 1 }); assert.ok(p.weapon.spread > steady * 4);
+  sim.tick(.05, { aim: true }); assert.ok(p.weapon.spread > steady * 3, 'movement does not settle instantly');
+  advance(sim, 1.5, { aim: true }); assert.ok(p.weapon.spread < steady * 1.02);
+  advance(sim, .5, { aim: true, crouch: true }); assert.ok(p.weapon.spread < steady * .7);
+});
+
+test('exertion creates lingering sway and recovers with rest', () => {
+  const sim = safeSim(), p = sim.player;
+  // Run laterally along the beach so exertion is not a collision artifact.
+  advance(sim, 2, { sprint: true, side: 1 }); advance(sim, 2, { sprint: true, side: -1 });
+  advance(sim, .7, { aim: true }); const tired = p.weapon.fatigue, tiredSpread = p.weapon.spread;
+  assert.ok(tired > .4); assert.ok(p.stamina < 40);
+  advance(sim, 9, { aim: true }); assert.ok(p.weapon.fatigue < .02); assert.ok(p.weapon.spread < tiredSpread * .7);
+});
+
+test('sustained bursts build recoil; deliberate shots settle; invalid fire never adds kick', () => {
+  const burst = safeSim(), deliberate = safeSim();
+  for (const sim of [burst, deliberate]) advance(sim, .5, { aim: true });
+  for (let i = 0; i < 8; i++) {
+    assert.equal(burst.shoot(), true); advance(burst, .15, { aim: true });
+    assert.equal(deliberate.shoot(), true); advance(deliberate, .65, { aim: true });
+  }
+  assert.ok(burst.player.weapon.recoilPitch > deliberate.player.weapon.recoilPitch * 3);
+  assert.ok(burst.player.weapon.strain > deliberate.player.weapon.strain);
+  const p = burst.player; burst.reload(); const recoil = p.weapon.recoilPitch;
+  assert.equal(burst.shoot(), false); assert.equal(p.weapon.recoilPitch, recoil);
+  advance(burst, 2.5, { aim: true }); assert.ok(p.weapon.recoilPitch < .00001);
+  assert.equal(p.pitch, 0, 'recoil recovery never changes the player input baseline');
+  burst.reset(); assert.equal(burst.player.weapon.strain, 0); assert.equal(burst.player.weapon.aim, 0);
+});
+
+test('render orientation and hitscan share the same sight line and crouch-transition origin', () => {
+  const sim = safeSim(), p = sim.player;
+  Object.assign(p, { yaw: .8, pitch: -.12 });
+  advance(sim, .5, { aim: true }); sim.shoot();
+  sim.tick(.05, { aim: true, crouch: true });
+  const orientation = weaponOrientation(p), camera = new PerspectiveCamera();
+  camera.rotation.order = 'YXZ'; camera.rotation.set(orientation.pitch, orientation.yaw, 0);
+  const rendered = camera.getWorldDirection(new Vector3()), ray = shotDirection(p, () => 0);
+  assert.ok(Math.hypot(rendered.x - ray.x, rendered.y - ray.y, rendered.z - ray.z) < 1e-12);
+  assert.ok(p.weapon.eye > 1.02 && p.weapon.eye < 1.68, 'height transitions smoothly');
+  p.cooldown = 0; sim.events = []; sim.shoot(ray);
+  assert.equal(sim.events.find(e => e.type === 'shot').from.y, p.weapon.eye);
 });

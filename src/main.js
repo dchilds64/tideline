@@ -1,6 +1,7 @@
 import { Simulation } from './simulation.js';
 import { GameView } from './render.js';
 import { FieldAudio } from './audio.js';
+import { handlingLabel } from './weapon.js';
 import { SOLIDS, HOSTAGE, EXTRACT, dist, clamp, visible } from './world.js';
 
 const $ = id => document.getElementById(id);
@@ -119,7 +120,11 @@ function updateHud() {
   $('stamina-bar').style.width = `${p.stamina}%`; $('ammo').textContent = String(p.ammo).padStart(2, '0'); $('reserve').textContent = `/ ${String(p.reserve).padStart(3, '0')}`;
   $('medkit').textContent = `H · FIELD DRESSING × ${p.medkits}`;
   $('weapon-status').innerHTML = p.reload ? 'RELOADING' : p.ammo === 0 ? 'EMPTY · PRESS R' : 'AUTO <i></i> SUPPRESSED';
-  $('crosshair').style.opacity = p.sprint || p.reload ? '0' : p.aim ? '.35' : '.75';
+  $('handling-status').textContent = handlingLabel(p);
+  $('crosshair').style.opacity = p.weapon.lowReady || p.reload || p.heal ? '0' : p.aim ? '.5' : '.75';
+  // Project the angular dispersion into screen space at the current field of view.
+  const gap = Math.max(3, Math.tan(p.weapon.spread) * innerHeight / (2 * Math.tan(view.camera.fov * Math.PI / 360)));
+  $('crosshair').style.setProperty('--gap', `${gap}px`);
   $('damage').style.opacity = Math.min(.7, p.hurt * .55 + (p.hp < 35 ? .12 : 0));
   const heading = ((-p.yaw * 180 / Math.PI) % 360 + 360) % 360;
   $('heading').textContent = Math.round(heading).toString().padStart(3, '0'); $('bearing').textContent = ['N','NE','E','SE','S','SW','W','NW'][Math.round(heading / 45) % 8];
@@ -164,14 +169,7 @@ function frame(now) {
       sim.player.pitch = clamp(sim.player.pitch + ((keys.has('ArrowUp') ? 1 : 0) - (keys.has('ArrowDown') ? 1 : 0)) * dt * .8, -1.35, 1.35);
     }
     sim.tick(dt, { forward: (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0), side: (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0), sprint: keys.has('ShiftLeft') || keys.has('ShiftRight'), crouch: keys.has('KeyC') || keys.has('ControlLeft') || keys.has('ControlRight'), aim: aiming, interact: keys.has('KeyE') });
-    if (firing || (windowed && keys.has('Space'))) {
-      // Shoot from the current input orientation, independent of render-frame lag.
-      const p = sim.player, spread = p.aim ? .0015 : .008;
-      const yaw = p.yaw + (Math.random() - .5) * spread, pitch = p.pitch + (Math.random() - .5) * spread;
-      if (sim.shoot({ x: -Math.sin(yaw) * Math.cos(pitch), y: Math.sin(pitch), z: -Math.cos(yaw) * Math.cos(pitch) })) {
-        p.pitch = clamp(p.pitch + (p.aim ? .009 : .015), -1.35, 1.35); p.yaw += (Math.random() - .5) * .007;
-      }
-    }
+    if (firing || (windowed && keys.has('Space'))) sim.shoot();
     audio.listener(sim.player);
     for (const e of sim.events.splice(0)) {
       audio.event(e); view.event(e);

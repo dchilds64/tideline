@@ -1,5 +1,13 @@
 # Verification record
 
+## Weapon handling update
+
+- `npm test`: 20/20 passing. Five new tests exercise raise timing, sprint-to-fire delay without ammo loss, movement settling, crouch support, exertion recovery, burst recoil versus deliberate fire, no kick on invalid fire, reset, and alignment with a real Three.js camera orientation.
+- `npm run build`: successful.
+- Live browser UI: nine-round automatic burst, timed reload (30 magazine / 81 reserve afterward), lateral sprinting, right-mouse aim, and pause exercised in windowed mode.
+- An isolated browser fixture using the production simulation and renderer verified an unobstructed centered optic, crouched steady dispersion of 0.72 mrad, post-sprint dispersion of 2.52 mrad with 70% handling fatigue, and an eight-round burst reaching 2.18 degrees of recoil. Nine seconds of recovery returned the standing rifle to 1.20 mrad and zero displayed recoil. These are game-tuned outputs, not real firearm measurements. No runtime errors were logged in the fixture.
+- The complete automated escort mission still passes. A new full live rescue-to-extraction run was not performed for this handling-only update; prior full browser playthroughs are recorded below. Captured-mouse and subjective audio limits still apply.
+
 ## Enemy cover update
 
 - `npm test`: 15/15 passing, including seven new combat tests. These exercise actual collision-respecting travel to shelter, crouching, stand/side peeks, burst spacing, magazine reloads, sight loss mid-burst, withdrawal when injured, cover invalidation after an observed angle change, hearing while concealed, and lowered hit volumes.

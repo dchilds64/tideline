@@ -33,7 +33,7 @@ Open the preview URL printed in the terminal, normally **http://127.0.0.1:4173/*
 | Shift, held | Sprint; drains stamina and makes more noise |
 | C or Ctrl, held | Crouch; quieter movement and lower detection range |
 | Left mouse, held | Automatic fire |
-| Right mouse, held | Aim; narrows field of view and reduces spread |
+| Right mouse, held | Raise sights; stop and crouch to settle aim |
 | R | Reload; 2.35 seconds |
 | E, held | Free the hostage / revive a downed teammate |
 | 1 | Follow |
@@ -45,6 +45,12 @@ Open the preview URL printed in the terminal, normally **http://127.0.0.1:4173/*
 | Esc | Pause and release mouse |
 
 The pause screen includes sensitivity and master-volume sliders, controls, and restart. To play where pointer lock is unavailable, choose **Play Without Mouse Capture** on the pause screen. In that mode, **arrow keys look**, **Space fires**, and **right-mouse drag aims and looks**. WASD and the other controls still work. The ordinary Resume button retries captured mouse mode.
+
+## Weapon handling
+
+The rifle takes 0.32 seconds to raise into the sights. Sprinting lowers it and leaves a 0.3-second recovery before firing is available. Moving increases dispersion; stopping lets it settle over a short interval. Crouching reduces sway, dispersion, and recoil. Fatigue from sprinting adds breathing sway that fades as you recover. Sustained bursts accumulate muzzle climb and dispersion; letting off the trigger allows recovery. The crosshair expands with dispersion, and a small status under ammunition explains raising, moving, heavy breathing, or steady aim. Controls are unchanged.
+
+The rendered view and shots share the same recoil, sway, and eye height, including the crouch transition. These are game-tuned approximations, not measured firearm or human-performance data. Hitscan and simplified ammunition handling remain.
 
 ## Mission and systems
 
@@ -76,7 +82,7 @@ npm test
 npm run build
 ```
 
-Fifteen automated tests cover physical access through all approaches, collision and occlusion, hitscan, reload timing and finite reserves, enemy search without wall tracking, squad hold/regroup and navigation, complete escort and extraction, treatment/revival, failure, and restart. Cover tests additionally verify actual shelter at the stopped position, reservations, burst timing, magazine reloads, loss of sight mid-burst, withdrawal on injury, compromised-cover relocation, hearing while concealed, and crouched hit detection. The escort test isolates navigation by disabling enemies; combat and cover have separate tests.
+Twenty automated tests cover physical access through all approaches, collision and occlusion, hitscan, reload timing and finite reserves, enemy search without wall tracking, squad hold/regroup and navigation, complete escort and extraction, treatment/revival, failure, and restart. Cover tests additionally verify actual shelter at the stopped position, reservations, burst timing, magazine reloads, loss of sight mid-burst, withdrawal on injury, compromised-cover relocation, hearing while concealed, and crouched hit detection. Handling tests cover raising time, sprint recovery, movement settling, crouch support, exertion recovery, accumulated recoil, invalid fire, reset, and alignment between the rendered sight line and shot rays. The escort test isolates navigation by disabling enemies; combat and cover have separate tests.
 
 A real browser playthrough was completed through normal UI input using windowed controls: infiltration under live enemy fire, firing/reloading, injury treatment, hostage release, escort through the eastern breach, and successful extraction with both teammates operational. The result was 0:54 of simulation time, six threats stopped, and six player rounds fired. Pause/map and redeploy were also exercised. See [verification notes](VERIFICATION.md).
 
@@ -87,6 +93,7 @@ The cover-behavior update also received a full browser rescue-to-extraction play
 - `src/world.js`: shared map geometry, collision, visibility rays, and A* navigation.
 - `src/simulation.js`: mission, health, ballistics, enemy state machines, squad, escort.
 - `src/cover.js`: geometry-based hide/peek candidates, protection checks, reservations, and route scoring.
+- `src/weapon.js`: shared aim transition, fatigue, sway, recoil, dispersion, and eye height.
 - `src/render.js`: procedural Three.js world, characters, first-person weapon, effects.
 - `src/audio.js`: Web Audio synthesis and directional emitters.
 - `src/main.js`: input, UI, map, pause, and animation loop.

@@ -1,5 +1,6 @@
 import { START, EXTRACT, HOSTAGE, PATROLS, dist, clamp, blocked, moveBody, visible, findPath, wallDistance } from './world.js';
 import { chooseCover, protects } from './cover.js';
+import { createWeaponState, updateWeapon, shotDirection, kickWeapon } from './weapon.js';
 
 const copy = p => ({ x: p.x, z: p.z });
 export class Simulation {
@@ -7,6 +8,7 @@ export class Simulation {
   reset() {
     this.time = 0; this.status = 'ready'; this.events = []; this.noises = []; this.kills = 0; this.shots = 0;
     this.player = { ...START, yaw: 0, pitch: 0, hp: 100, stamina: 100, crouch: false, sprint: false, aim: false, light: false, ammo: 30, reserve: 90, reload: 0, heal: 0, medkits: 1, cooldown: 0, step: 0, hurt: 0 };
+    this.player.weapon = createWeaponState();
     this.friends = [{ x: -5, z: 33, name: 'ROOK' }, { x: -1, z: 34, name: 'VALE' }].map((a, i) => ({ ...a, id: `friend-${i}`, type: 'friend', hp: 100, yaw: 0, mode: 'follow', path: [], repath: 0, cooldown: 1, stuck: 0, moving: false }));
     this.enemies = PATROLS.map((patrol, i) => ({ ...patrol[0], id: `enemy-${i}`, type: 'enemy', hp: 68, yaw: i % 2 ? Math.PI / 2 : Math.PI, state: 'patrol', awareness: 0, patrol, waypoint: 1, path: [], repath: 0, cooldown: 1.5 + i * .12, lastSeen: null, memory: 0, stuck: 0, moving: false, crouch: false, cover: null, coverRetry: 0, tactic: 'observe', tacticTime: 0, coverTravel: 0, pressure: 0, burst: 0, ammo: 30, reload: 0, aimTime: 0, targetId: null }));
     this.hostage = { ...HOSTAGE, id: 'hostage', name: 'DR. ELIAN', type: 'hostage', hp: 100, yaw: 0, freed: false, path: [], repath: 0, stuck: 0, moving: false };
@@ -35,10 +37,11 @@ export class Simulation {
   }
   shoot(direction) {
     const p = this.player;
-    if (this.status !== 'playing' || p.cooldown > 0 || p.reload || p.heal || p.sprint) return false;
+    if (this.status !== 'playing' || p.cooldown > 0 || p.reload || p.heal || p.sprint || p.weapon.lowReady > 0) return false;
     if (!p.ammo) { p.cooldown = .3; this.emit('empty'); return false; }
+    direction ??= shotDirection(p, this.random);
     p.ammo--; this.shots++; p.cooldown = .115; this.noise(p, 31);
-    const origin = { x: p.x, y: p.crouch ? 1.02 : 1.68, z: p.z };
+    const origin = { x: p.x, y: p.weapon.eye, z: p.z };
     let range = wallDistance(origin, direction, 85), victim = null, headshot = false;
     for (const enemy of this.enemies) {
       if (enemy.hp <= 0) continue;
@@ -56,6 +59,7 @@ export class Simulation {
     this.emit('shot', { from: origin, to: point, faction: 'player', hit: !!victim });
     if (victim) { this.damage(victim, headshot ? 100 : 36, p); this.emit('hit', { killed: victim.hp <= 0 }); }
     else if (range < 85) this.emit('impact', { point });
+    kickWeapon(p, this.random);
     return true;
   }
   damage(actor, amount, source) {
@@ -176,6 +180,7 @@ export class Simulation {
     const dz = (-Math.cos(p.yaw) * f - Math.sin(p.yaw) * s) / n * speed * dt;
     const before = copy(p); moveBody(p, dx, dz);
     p.moving = dist(before, p) > .001;
+    updateWeapon(p, dt);
     if (p.moving) {
       p.step -= dt;
       if (p.step <= 0) { p.step = p.sprint ? .28 : p.crouch ? .62 : .45; this.noise(p, p.sprint ? 13 : p.crouch ? 2.8 : 6); this.emit('step', { soft: p.crouch }); }
