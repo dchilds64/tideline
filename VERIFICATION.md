@@ -1,5 +1,17 @@
 # Verification record
 
+## Visual realism and immersion update — November 5, 2026
+
+- `npm test`: 20/20 passing; mission, navigation, combat and weapon-handling checks unchanged.
+- `npm run check:assets`: 14 local JPEG maps verified against provider checksums, 7.79 MiB total. No external runtime asset requests are needed.
+- `npm run build`: successful. Vite reports a non-fatal chunk-size advisory for the Three.js bundle (approximately 506 kB uncompressed / 128 kB gzip). Texture payload is separate and bundled in dist.
+- Full live browser rescue completed using ordinary windowed controls with active enemies: 1:08 mission time, six threats stopped, three player rounds, hostage extracted and both teammates operational. Firing, reload, flashlight, minimal-HUD toggle, map and interaction were exercised. Evidence: `artifacts/graphics-mission-complete.jpg`.
+- Visual inspection covered the beach approach, compound entrance, holding-room interior, extraction jetty and sea. High and Balanced quality were tested. No browser runtime errors or missing maps were observed.
+- A short isolated render fixture at 1280×720 reported approximately 120 average FPS over 180-frame samples, with roughly 2.5–3.7 ms CPU render submission and 550–815 draw calls including shadows/post-processing. The fixture freezes simulation; this is not a sustained GPU benchmark, active-combat performance result, or a cross-device guarantee. Live gameplay was also inspected at the larger in-app viewport.
+- Found and corrected a gate-light artifact: its source was inside the wall, causing grazing-light speckles. Moved the fixture outside the wall and visually rechecked the gate after the full playthrough. Final in-game image: `artifacts/visual-upgrade.jpg`.
+- Game left running at its briefing. Pointer-lock automation and subjective audio limits below continue to apply.
+- Remaining fidelity limits: procedural characters/weapon and simple animation, environment-only reflections, static-only local lamp shadows, flat navigation and non-colliding small surface props. No claim of photorealism.
+
 ## Weapon handling update
 
 - `npm test`: 20/20 passing. Five new tests exercise raise timing, sprint-to-fire delay without ammo loss, movement settling, crouch support, exertion recovery, burst recoil versus deliberate fire, no kick on invalid fire, reset, and alignment with a real Three.js camera orientation.

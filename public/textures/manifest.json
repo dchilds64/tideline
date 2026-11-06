@@ -1,0 +1,114 @@
+[
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_02/coast_sand_02_diff_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "coast_sand_02",
+    "md5": "854479f7ceea9f940275f6733453600a",
+    "file": "public/textures/coast_sand_02/diffuse.jpg",
+    "map": "Diffuse"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_02/coast_sand_02_nor_gl_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "coast_sand_02",
+    "md5": "ab2f0168551ddb91350654d620a16be7",
+    "file": "public/textures/coast_sand_02/nor_gl.jpg",
+    "map": "nor_gl"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/coast_sand_02/coast_sand_02_rough_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "coast_sand_02",
+    "md5": "5c7ee2bc3d0ff6ccad956d660a024eb5",
+    "file": "public/textures/coast_sand_02/rough.jpg",
+    "map": "Rough"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_003/concrete_wall_003_diff_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "concrete_wall_003",
+    "md5": "1277cc6bcfc8e4f074f9852fbf19b2d3",
+    "file": "public/textures/concrete_wall_003/diffuse.jpg",
+    "map": "Diffuse"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_003/concrete_wall_003_nor_gl_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "concrete_wall_003",
+    "md5": "ba9639f62ebd5434f5bd8fb97415c1ad",
+    "file": "public/textures/concrete_wall_003/nor_gl.jpg",
+    "map": "nor_gl"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_wall_003/concrete_wall_003_rough_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "concrete_wall_003",
+    "md5": "ab6b1e23e0040d5e467d27d10fad998e",
+    "file": "public/textures/concrete_wall_003/rough.jpg",
+    "map": "Rough"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_boulder_cracked/rock_boulder_cracked_diff_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "rock_boulder_cracked",
+    "md5": "2eee29ef1257ce79569e4be0b76cd1ad",
+    "file": "public/textures/rock_boulder_cracked/diffuse.jpg",
+    "map": "Diffuse"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_boulder_cracked/rock_boulder_cracked_nor_gl_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "rock_boulder_cracked",
+    "md5": "1185717651f6fa2db0face12425d0a74",
+    "file": "public/textures/rock_boulder_cracked/nor_gl.jpg",
+    "map": "nor_gl"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rock_boulder_cracked/rock_boulder_cracked_rough_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "rock_boulder_cracked",
+    "md5": "8610432e3011c02abb70433f050cf651",
+    "file": "public/textures/rock_boulder_cracked/rough.jpg",
+    "map": "Rough"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/weathered_planks/weathered_planks_diff_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "weathered_planks",
+    "md5": "5d7c9e7088bfa54490ba03ba15b660d8",
+    "file": "public/textures/weathered_planks/diffuse.jpg",
+    "map": "Diffuse"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/weathered_planks/weathered_planks_nor_gl_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "weathered_planks",
+    "md5": "119541f6b143f21f0a6e9774e9208905",
+    "file": "public/textures/weathered_planks/nor_gl.jpg",
+    "map": "nor_gl"
+  },
+  {
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/weathered_planks/weathered_planks_rough_1k.jpg",
+    "license": "CC0-1.0",
+    "asset": "weathered_planks",
+    "md5": "4ca50b076e1fc58f6862a5b039a7d5c9",
+    "file": "public/textures/weathered_planks/rough.jpg",
+    "map": "Rough"
+  },
+  {
+    "license": "CC0-1.0",
+    "asset": "denim_fabric",
+    "map": "nor_gl",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/denim_fabric/denim_fabric_nor_gl_1k.jpg",
+    "file": "public/textures/denim_fabric/nor_gl.jpg",
+    "md5": "9008fe723671f9cb3e6d0889eab9adb0"
+  },
+  {
+    "license": "CC0-1.0",
+    "asset": "denim_fabric",
+    "map": "Rough",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/denim_fabric/denim_fabric_rough_1k.jpg",
+    "file": "public/textures/denim_fabric/rough.jpg",
+    "md5": "7eebb4a6185f2e6805976bc356dd1b41"
+  }
+]

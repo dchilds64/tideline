@@ -6,3 +6,8 @@
 #crosshair i:nth-child(2){top:var(--gap)}
 #crosshair i:nth-child(3){left:calc(-5px - var(--gap))}
 #crosshair i:nth-child(4){left:var(--gap)}
+.asset-status{display:block;min-height:16px;margin-top:9px;font:9px monospace;color:#92aaa5;letter-spacing:.06em}
+button:disabled{opacity:.45;cursor:wait}
+.immersive #objective,.immersive #compass,.immersive #marker,.immersive #squad,.immersive #vitals,.immersive #weapon,.immersive #bottom-hint,.immersive .hud-top,.immersive .friendly-label,.immersive #hostage-status{visibility:hidden}
+.immersive #crosshair{opacity:0!important}
+.screen.modal .panel{max-height:94vh;overflow:auto}

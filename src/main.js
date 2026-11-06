@@ -10,6 +10,15 @@ let view, mode = 'menu', controlsFrom = 'menu', sensitivity = 1, radioUntil = 0,
 let keys = new Set(), firing = false, aiming = false;
 try { view = new GameView($('game')); view.bind(sim); }
 catch (error) { $('error').hidden = false; $('error').textContent = `Unable to start the 3D renderer. This game requires WebGL 2. Enable browser hardware acceleration and reload. Details: ${error.message}`; throw error; }
+const assetStatus = document.createElement('small'); assetStatus.className = 'asset-status'; assetStatus.textContent = 'Loading coastal materials…'; $('start').after(assetStatus); $('start').disabled = true;
+view.assetsReady.then(failed => { $('start').disabled = false; assetStatus.textContent = failed.length ? 'Some surface detail is unavailable. Gameplay is ready.' : 'Ready · Materials stored locally'; });
+let immersiveHud = false, highQuality = true;
+const immersionButton = document.createElement('button'), qualityButton = document.createElement('button');
+immersionButton.className = qualityButton.className = 'text-button';
+function toggleImmersion() { immersiveHud = !immersiveHud; document.body.classList.toggle('immersive', immersiveHud); immersionButton.textContent = `HUD: ${immersiveHud ? 'MINIMAL' : 'FULL'} [I]`; }
+immersionButton.textContent = 'HUD: FULL [I]'; immersionButton.onclick = toggleImmersion;
+qualityButton.textContent = 'GRAPHICS: HIGH'; qualityButton.onclick = () => { highQuality = !highQuality; view.setQuality(highQuality); qualityButton.textContent = `GRAPHICS: ${highQuality ? 'HIGH' : 'BALANCED'}`; };
+$('restart').after(immersionButton, qualityButton);
 
 function clearInput() { keys.clear(); firing = false; aiming = false; }
 function setMode(next) {
@@ -74,6 +83,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'KeyR') sim.reload();
   if (e.code === 'KeyH') sim.heal();
   if (e.code === 'KeyF') sim.player.light = !sim.player.light;
+  if (e.code === 'KeyI') toggleImmersion();
   if (e.code === 'Digit1') sim.order('follow');
   if (e.code === 'Digit2') sim.order('hold');
   if (e.code === 'Digit3') sim.order('regroup');

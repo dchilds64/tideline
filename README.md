@@ -2,7 +2,7 @@
 
 A complete, local, first-person tactical rescue game. You lead **Morrow**, a fictional three-person maritime response unit, into a coastal relay compound at Kestrel Bay. Recover Dr. Elian and escort him to the eastern extraction boat.
 
-Built with JavaScript, Three.js, Vite, and original procedural geometry, textures, and synthesized audio. No accounts, paid services, external asset servers, or runtime network requests are required. This is a stylized vertical slice, not a professional military training simulator.
+Built with JavaScript, Three.js, Vite, original procedural geometry and synthesized audio, plus locally bundled CC0 surface maps from Poly Haven. No accounts, paid services, external asset servers, or external runtime network requests are required. This is a stylized vertical slice, not a professional military training simulator.
 
 ## Launch
 
@@ -41,10 +41,21 @@ Open the preview URL printed in the terminal, normally **http://127.0.0.1:4173/*
 | 3 | Regroup and follow |
 | H | Use one field dressing; 3 seconds, restores up to 65 health |
 | F | Toggle weapon light; also makes you easier to detect |
+| I | Toggle minimal HUD; prompts and field map remain available |
 | Tab or M | Field map; pauses simulation |
 | Esc | Pause and release mouse |
 
 The pause screen includes sensitivity and master-volume sliders, controls, and restart. To play where pointer lock is unavailable, choose **Play Without Mouse Capture** on the pause screen. In that mode, **arrow keys look**, **Space fires**, and **right-mouse drag aims and looks**. WASD and the other controls still work. The ordinary Resume button retries captured mouse mode.
+
+## Visual realism and immersion
+
+Visual realism and immersion are a high project priority; see [visual direction](VISUAL_DIRECTION.md). This pass adds scanned sand, concrete, rock, timber and fabric surface detail, physical texture scale, normal and roughness maps, irregular boulders, clustered wind-blown grass, clouded night sky, wet ground, shoreline foam, and a more detailed extraction boat. Buildings have gutters, downpipes, service fittings, barred windows and interior shelves. The weapon and articulated characters use rounded forms and added equipment detail.
+
+Moonlight, cached shadows for static geometry under local lamps, and a shadow-casting flashlight establish dark approach routes and warm readable interiors. High graphics adds restrained bloom and renders at up to 1.6 device pixel ratio. **Graphics: Balanced** on the pause screen disables bloom and flashlight shadows and caps pixel ratio at 1.0. Static dressing is batched to reduce draw calls. Press **I** for a minimal HUD, including an unobstructed physical red dot when aiming. Press I again to restore health/ammo/objective information.
+
+Materials load from the repository before Deploy becomes available; missing maps fall back to neutral surfaces with a visible status message. All 14 images ship with the production build. Asset sources and licenses are recorded in [third-party assets](THIRD_PARTY_ASSETS.md).
+
+These are meaningful visual improvements, not photorealism. Characters and hands remain procedural with simple animation; reloads do not animate individual fingers or magazine handling. Wet surfaces reflect the sky environment and lights, not a complete reflected scene. Lamp shadows include static geometry; moon and flashlight shadows include moving actors. Navigation remains flat, and small decorative props are not new cover.
 
 ## Weapon handling
 
@@ -67,7 +78,7 @@ The rendered view and shots share the same recoil, sway, and eye height, includi
 
 ## Scope and simplifications
 
-- Small authored map with procedural, visibly stylized models and basic limb animation. No licensed military likenesses, downloaded art, or voice recordings.
+- Small authored map with original procedural models, basic limb animation, and CC0 scanned surface maps. No licensed military likenesses or voice recordings.
 - Flat-ground, two-dimensional collision/navigation under a three-dimensional renderer. No jumping, climbing, swimming, prone stance, leaning, vehicles, or destructible scenery. Map limits are hard boundaries.
 - Hitscan weapons; no bullet drop, penetration, ricochets, suppression model, armor simulation, or complex wound model. Low cover helps through line-of-sight occlusion.
 - Enemies use finite-state behavior and chance-based shots after a visibility check. Their cover planning is local geometry-based selection, not coordinated squad tactics. They do not plan team flanking maneuvers; reserve magazines are unlimited. Reactions to incoming fire currently require a hit, not a near miss. Teammates engage automatically; there is no stealth hold-fire order.
@@ -79,6 +90,7 @@ The rendered view and shots share the same recoil, sway, and eye height, includi
 
 ```powershell
 npm test
+npm run check:assets
 npm run build
 ```
 
@@ -90,13 +102,16 @@ The cover-behavior update also received a full browser rescue-to-extraction play
 
 ## Source layout
 
+The visual update also passed a full live browser mission: 1:08, three player rounds, both teammates and the hostage extracted. High/Balanced settings and minimal HUD were checked, along with surface loading and interior/exterior lighting.
+
 - `src/world.js`: shared map geometry, collision, visibility rays, and A* navigation.
 - `src/simulation.js`: mission, health, ballistics, enemy state machines, squad, escort.
 - `src/cover.js`: geometry-based hide/peek candidates, protection checks, reservations, and route scoring.
 - `src/weapon.js`: shared aim transition, fatigue, sway, recoil, dispersion, and eye height.
-- `src/render.js`: procedural Three.js world, characters, first-person weapon, effects.
+- `src/render.js`: Three.js world, characters, first-person weapon, lighting, post-processing and effects.
+- `src/appearance.js`: local surface loading, physical UV scale, boulder geometry, sky, wind-driven grass and static batching.
 - `src/audio.js`: Web Audio synthesis and directional emitters.
 - `src/main.js`: input, UI, map, pause, and animation loop.
 - `tests/simulation.test.js`: deterministic simulation checks.
 
-Three.js and Vite are MIT-licensed; their license files are included in their installed packages. All game-specific visual and audio assets are generated by the source in this repository.
+Three.js and Vite are MIT-licensed; their license files are included in their installed packages. Original models, procedural effects and audio are generated by the source. Bundled surface maps are CC0; see THIRD_PARTY_ASSETS.md.
