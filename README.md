@@ -2,7 +2,7 @@
 
 A complete, local, first-person tactical rescue game. You lead **Morrow**, a fictional three-person maritime response unit, into a coastal relay compound at Kestrel Bay. Recover Dr. Elian and escort him to the eastern extraction boat.
 
-Built with JavaScript, Three.js, Vite, original procedural geometry and synthesized audio, plus locally bundled CC0 surface maps from Poly Haven. No accounts, paid services, external asset servers, or external runtime network requests are required. This is a stylized vertical slice, not a professional military training simulator.
+Built with JavaScript, Three.js, Vite, original environment geometry and synthesized audio, locally bundled CC0 surface maps from Poly Haven, and a credited textured/skinned operator model. No accounts, paid services, external asset servers, or external runtime network requests are required. This is a stylized vertical slice, not a professional military training simulator.
 
 ## Launch
 
@@ -49,15 +49,15 @@ The pause screen includes sensitivity and master-volume sliders, controls, and r
 
 ## Visual realism and immersion
 
-Visual realism and immersion are a high project priority; see [visual direction](VISUAL_DIRECTION.md). This pass adds scanned sand, concrete, rock, timber and fabric surface detail, physical texture scale, normal and roughness maps, irregular boulders, clustered wind-blown grass, clouded night sky, wet ground, shoreline foam, and a more detailed extraction boat. Buildings have gutters, downpipes, service fittings, barred windows and interior shelves. The weapon and articulated characters use rounded forms and added equipment detail.
+Visual realism and immersion are a high project priority; see [visual direction](VISUAL_DIRECTION.md). This pass adds scanned sand, concrete, rock, timber and fabric surface detail, physical texture scale, normal and roughness maps, irregular boulders, clustered wind-blown grass, clouded night sky, wet ground, shoreline foam, and a more detailed extraction boat. Buildings have gutters, downpipes, service fittings, barred windows and interior shelves. The first-person weapon uses rounded forms and added equipment detail. Teammates and enemies use a detailed textured character mesh with clothing, gloves, boots, a balaclava, cap and tactical equipment.
 
 Moonlight, cached shadows for static geometry under local lamps, and a shadow-casting flashlight establish dark approach routes and warm readable interiors. High graphics adds restrained bloom and renders at up to 1.6 device pixel ratio. **Graphics: Balanced** on the pause screen disables bloom and flashlight shadows and caps pixel ratio at 1.0. Static dressing is batched to reduce draw calls. Press **I** for a minimal HUD, including an unobstructed physical red dot when aiming. Press I again to restore health/ammo/objective information.
 
 Materials load from the repository before Deploy becomes available; missing maps fall back to neutral surfaces with a visible status message. All 14 images ship with the production build. Asset sources and licenses are recorded in [third-party assets](THIRD_PARTY_ASSETS.md).
 
-Character movement now uses individual ground-anchored steps driven by actual travel, articulated knees and elbows, smoother turns, and a lowered crouch pose. Operators raise their rifles for visible contacts; both hands follow the weapon. Enemy reloads move the support hand between the fore-end, magazine well and belt. AI shots produce visible weapon recoil and a brief muzzle flash. The civilian has separate restrained and walking arm poses.
+Teammates and enemies now use a continuous skinned character mesh with retargeted idle, walking, running, crouched, aiming and death animations. Each actor has its own skeleton and animation clock. Grip constraints keep hands on the rifle, stationary stance correction plants both boots, and a procedural support-hand gesture accompanies enemy reloads. The model and its textures are bundled in one 5.09 MiB GLB. Asset loading falls back to the original procedural characters if the file is unavailable. Credits are available from the briefing and in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md).
 
-These are incremental visual improvements, not photorealism. Characters and hands remain visibly procedural; there is no motion capture, skin deformation, facial animation, finger articulation, terrain-aware foot placement or physical ragdoll. The first-person reload is still a simplified weapon-lowering animation; third-person magazine handling is an approximation. Wet surfaces reflect the sky environment and lights, not a complete reflected scene. Lamp shadows include static geometry; moon and flashlight shadows include moving actors. Navigation remains flat, and small decorative props are not new cover.
+These are incremental visual improvements, not photorealism. The hostage and first-person hands remain visibly procedural. Armed actors share one base model; there is no facial animation, terrain-aware walking or physical ragdoll. Directional movement and grip/reload overlays remain approximations. The first-person reload is still a simplified weapon-lowering animation; third-person magazine handling is an approximation. Wet surfaces reflect the sky environment and lights, not a complete reflected scene. Lamp shadows include static geometry; moon and flashlight shadows include moving actors. Navigation remains flat, and small decorative props are not new cover.
 
 ## Weapon handling
 
@@ -80,7 +80,7 @@ The rendered view and shots share the same recoil, sway, and eye height, includi
 
 ## Scope and simplifications
 
-- Small authored map with original procedural models, procedural limb solving and foot placement, and CC0 scanned surface maps. No licensed military likenesses or voice recordings.
+- Small authored map with original environment geometry, one shared skinned operator model, a procedural civilian, and CC0 scanned surface maps. No licensed military likenesses or voice recordings.
 - Flat-ground, two-dimensional collision/navigation under a three-dimensional renderer. No jumping, climbing, swimming, prone stance, leaning, vehicles, or destructible scenery. Map limits are hard boundaries.
 - Hitscan weapons; no bullet drop, penetration, ricochets, suppression model, armor simulation, or complex wound model. Low cover helps through line-of-sight occlusion.
 - Enemies use finite-state behavior and chance-based shots after a visibility check. Their cover planning is local geometry-based selection, not coordinated squad tactics. They do not plan team flanking maneuvers; reserve magazines are unlimited. Reactions to incoming fire currently require a hit, not a near miss. Teammates engage automatically; there is no stealth hold-fire order.
@@ -96,7 +96,7 @@ npm run check:assets
 npm run build
 ```
 
-Twenty-four automated tests cover physical access through all approaches, collision and occlusion, hitscan, reload timing and finite reserves, enemy search without wall tracking, squad hold/regroup and navigation, complete escort and extraction, treatment/revival, failure, and restart. Cover tests additionally verify actual shelter at the stopped position, reservations, burst timing, magazine reloads, loss of sight mid-burst, withdrawal on injury, compromised-cover relocation, hearing while concealed, and crouched hit detection. Handling tests cover raising time, sprint recovery, movement settling, crouch support, exertion recovery, accumulated recoil, invalid fire, reset, and alignment between the rendered sight line and shot rays. Four presentation checks additionally cover limb lengths, planted-foot reachability, stop/pause behavior, smooth turning and repositioning, actual rig hand constraints, crouched head alignment and muzzle-flash visibility. The escort test isolates navigation by disabling enemies; combat and cover have separate tests.
+Twenty-seven automated tests cover physical access through all approaches, collision and occlusion, hitscan, reload timing and finite reserves, enemy search without wall tracking, squad hold/regroup and navigation, complete escort and extraction, treatment/revival, failure, and restart. Cover tests additionally verify actual shelter at the stopped position, reservations, burst timing, magazine reloads, loss of sight mid-burst, withdrawal on injury, compromised-cover relocation, hearing while concealed, and crouched hit detection. Handling tests cover raising time, sprint recovery, movement settling, crouch support, exertion recovery, accumulated recoil, invalid fire, reset, and alignment between the rendered sight line and shot rays. Imported-asset checks cover independent skeletons, shared-resource disposal, grip reach, stationary boot placement, death/revival and load fallback. Four procedural presentation checks additionally cover limb lengths, planted-foot reachability, stop/pause behavior, smooth turning and repositioning, actual rig hand constraints, crouched head alignment and muzzle-flash visibility. The escort test isolates navigation by disabling enemies; combat and cover have separate tests.
 
 A real browser playthrough was completed through normal UI input using windowed controls: infiltration under live enemy fire, firing/reloading, injury treatment, hostage release, escort through the eastern breach, and successful extraction with both teammates operational. The result was 0:54 of simulation time, six threats stopped, and six player rounds fired. Pause/map and redeploy were also exercised. See [verification notes](VERIFICATION.md).
 
@@ -113,9 +113,11 @@ The visual update also passed a full live browser mission: 1:08, three player ro
 - `src/render.js`: Three.js world, characters, first-person weapon, lighting, post-processing and effects.
 - `src/appearance.js`: local surface loading, physical UV scale, boulder geometry, sky, wind-driven grass and static batching.
 - `src/animation.js`: ground-anchored gait, smooth actor motion and two-bone limb solver.
-- `src/actor-view.js`: character geometry, constrained weapon grips, crouch and reload poses.
+- `src/actor-view.js`: procedural fallback characters and shared rifle geometry.
+- `src/operators.js`: imported skinned characters, animation blending, grip/stance constraints and resource ownership.
+- `scripts/prepare-character.mjs`: reproducible offline animation retargeting from verified source assets.
 - `src/audio.js`: Web Audio synthesis and directional emitters.
 - `src/main.js`: input, UI, map, pause, and animation loop.
 - `tests/simulation.test.js`: deterministic simulation checks.
 
-Three.js and Vite are MIT-licensed; their license files are included in their installed packages. Original models, procedural effects and audio are generated by the source. Bundled surface maps are CC0; see THIRD_PARTY_ASSETS.md.
+Three.js and Vite are MIT-licensed; their license files are included in their installed packages. Original environment/weapon geometry, procedural effects and audio are generated by the source. Bundled surface maps are CC0; the operator has CC BY 4.0 / CC0 credits in THIRD_PARTY_ASSETS.md.

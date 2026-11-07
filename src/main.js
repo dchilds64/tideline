@@ -10,8 +10,8 @@ let view, mode = 'menu', controlsFrom = 'menu', sensitivity = 1, radioUntil = 0,
 let keys = new Set(), firing = false, aiming = false;
 try { view = new GameView($('game')); view.bind(sim); }
 catch (error) { $('error').hidden = false; $('error').textContent = `Unable to start the 3D renderer. This game requires WebGL 2. Enable browser hardware acceleration and reload. Details: ${error.message}`; throw error; }
-const assetStatus = document.createElement('small'); assetStatus.className = 'asset-status'; assetStatus.textContent = 'Loading coastal materials…'; $('start').after(assetStatus); $('start').disabled = true;
-view.assetsReady.then(failed => { $('start').disabled = false; assetStatus.textContent = failed.length ? 'Some surface detail is unavailable. Gameplay is ready.' : 'Ready · Materials stored locally'; });
+const assetStatus = document.createElement('small'); assetStatus.className = 'asset-status'; assetStatus.textContent = 'Loading environment and operators…'; $('start').after(assetStatus); $('start').disabled = true;
+view.assetsReady.then(failed => { $('start').disabled = false; assetStatus.textContent = failed.length ? 'Some visual assets are unavailable. Gameplay is ready with fallback models.' : 'Ready · Materials and operators stored locally'; });
 let immersiveHud = false, highQuality = true;
 const immersionButton = document.createElement('button'), qualityButton = document.createElement('button');
 immersionButton.className = qualityButton.className = 'text-button';

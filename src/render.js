@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createActorRig, animateActorRig } from './actor-view.js';
+import { OperatorLibrary } from './operators.js';
 import { SOLIDS, EXTRACT, HOSTAGE } from './world.js';
 import { weaponOrientation } from './weapon.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -19,7 +20,11 @@ export class GameView {
     this.scene = new THREE.Scene(); this.scene.fog = new THREE.FogExp2(0x1b2530, .009);
     this.camera = new THREE.PerspectiveCamera(76, innerWidth / innerHeight, .05, 240); this.camera.rotation.order = 'YXZ'; this.scene.add(this.camera);
     this.actorMeshes = new Map(); this.effects = []; this.bob = 0; this.kick = 0;
-    this.materials = {}; this.surfaces = new SurfaceLibrary(this.renderer); this.assetsReady = this.surfaces.ready;
+    this.materials = {}; this.surfaces = new SurfaceLibrary(this.renderer); this.operators = new OperatorLibrary();
+    this.assetsReady = Promise.all([this.surfaces.ready, this.operators.ready]).then(results => {
+      if (this.boundSim && this.operators.template) this.bind(this.boundSim);
+      return results.flat();
+    });
     this.buildWorld(); batchStaticWorld(this.scene); this.buildWeapon();
     this.composer = new EffectComposer(this.renderer);
     this.composer.renderTarget1.samples = this.composer.renderTarget2.samples = 2;
@@ -260,7 +265,7 @@ export class GameView {
     }
   }
   character(actor) {
-    const mesh = createActorRig(this, actor);
+    const mesh = this.operators?.create(this, actor) || createActorRig(this, actor);
     this.scene.add(mesh); this.actorMeshes.set(actor.id, mesh); return mesh;
   }
   buildWeapon() {
@@ -309,8 +314,12 @@ export class GameView {
     g.traverse(m => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = false; m.frustumCulled = false; } });
   }
   bind(sim) {
-    this.kick = 0; this.flashTimer = 0; this.lastActorTime = sim.time;
-    for (const mesh of this.actorMeshes.values()) { this.scene.remove(mesh); mesh.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); }
+    this.boundSim = sim; this.kick = 0; this.flashTimer = 0; this.lastActorTime = sim.time;
+    for (const mesh of this.actorMeshes.values()) {
+      this.scene.remove(mesh);
+      if (mesh.userData.dispose) mesh.userData.dispose();
+      else mesh.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+    }
     this.actorMeshes.clear(); for (const actor of [...sim.friends, ...sim.enemies, sim.hostage]) this.character(actor);
     for (const effect of this.effects) { this.scene.remove(effect.mesh); effect.mesh.geometry.dispose(); effect.mesh.material.dispose(); } this.effects = [];
   }

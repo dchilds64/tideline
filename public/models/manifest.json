@@ -1,0 +1,36 @@
+{
+  "file": "public/models/operator.glb",
+  "sha256": "d3c990e6cd452083fc619690d13397e1b52819b1e1c9a3c86aa81e35d57ccf53",
+  "bytes": 5333072,
+  "revision": "130ac2a5c856401ec36e7d35afcfefe40c5801f4",
+  "license": "CC-BY-4.0",
+  "authors": [
+    "DanlyVostok",
+    "BAMEN",
+    "Quaternius",
+    "cktang88 (source conversion)"
+  ],
+  "sources": [
+    {
+      "url": "https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets/models/characters/soldier_tac.glb",
+      "sha256": "fe02bc307077d7a5a74069d085893988d93751495871c84082256e60bf9bfc9e"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets/models/characters/soldier.glb",
+      "sha256": "6f229176b1ca49ff33605718ebfcca7fcee8f65d6d311ce3c86693df9310d2d7"
+    }
+  ],
+  "clips": [
+    "ready_idle",
+    "aim_idle",
+    "ready_walk",
+    "aim_walk",
+    "ready_run",
+    "ready_crouch_idle",
+    "ready_crouch_walk",
+    "aim_crouch_idle",
+    "aim_crouch_walk",
+    "reload",
+    "death"
+  ]
+}

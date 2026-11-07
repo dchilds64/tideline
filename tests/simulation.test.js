@@ -6,11 +6,77 @@ import { weaponOrientation, shotDirection } from '../src/weapon.js';
 import { createActorMotion, updateActorMotion, solveLimb, angleDifference } from '../src/animation.js';
 import { createActorRig, animateActorRig } from '../src/actor-view.js';
 import { GameView } from '../src/render.js';
+import { OperatorLibrary, createOperator, operatorClip } from '../src/operators.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { readFile } from 'node:fs/promises';
 import { PerspectiveCamera, Vector3, Scene, MeshStandardMaterial } from 'three';
 import { SOLIDS, EXTRACT, HOSTAGE, blocked, moveBody, visible, findPath, dist } from '../src/world.js';
 
 const advance = (sim, seconds, input = {}) => { for (let t = 0; t < seconds; t += .05) sim.tick(.05, input); };
 const safeSim = () => { const sim = new Simulation(() => .5); sim.start(); sim.enemies.forEach(e => e.hp = 0); return sim; };
+
+async function operatorFixture() {
+  // The production GLB's geometry, joints and clips are parsed unchanged. Only
+  // image decoding is omitted for the Node test process, which has no DOM.
+  globalThis.ProgressEvent ??= class extends Event { constructor(type, fields = {}) { super(type); Object.assign(this, fields); } };
+  const bytes = await readFile(new URL('../public/models/operator.glb', import.meta.url)), length = bytes.readUInt32LE(12);
+  const json = JSON.parse(bytes.subarray(20, 20 + length));
+  json.buffers[0].uri = `data:application/octet-stream;base64,${bytes.subarray(28 + length).toString('base64')}`;
+  json.materials = json.materials.map(m => ({ name: m.name })); delete json.images; delete json.textures;
+  const asset = await new GLTFLoader().parseAsync(JSON.stringify(json), '');
+  const view = Object.create(GameView.prototype); view.scene = new Scene();
+  view.surfaces = { fabric: color => new MeshStandardMaterial({ color }) };
+  return { asset, view };
+}
+
+test('imported operators animate independently and dispose without releasing shared geometry', async () => {
+  const { asset, view } = await operatorFixture(), actor = { id: 'friend-0', type: 'friend', x: 0, z: 0, yaw: 0, hp: 100 };
+  const first = createOperator(view, actor, asset), second = createOperator(view, { ...actor, id: 'friend-1' }, asset);
+  assert.notEqual(first.userData.bones.get('Hips'), second.userData.bones.get('Hips'));
+  let shared; asset.scene.traverse(o => { if (o.isMesh) shared = o.geometry; });
+  let disposed = false; shared.addEventListener('dispose', () => { disposed = true; });
+  for (let i = 0; i < 60; i++) { actor.z -= .035; animateActorRig(first, actor, 1 / 60, i / 60); }
+  assert.equal(first.userData.activeClip, 'ready_walk'); assert.equal(second.userData.activeClip, 'ready_idle');
+  assert.notEqual(first.userData.mixer.time, second.userData.mixer.time);
+  const before = first.userData.mixer.time; animateActorRig(first, actor, 0, 1); assert.equal(first.userData.mixer.time, before);
+  first.userData.dispose(); assert.equal(disposed, false, 'another actor still owns a reference to shared geometry');
+  animateActorRig(second, { ...actor, hp: 100 }, .05, 2); second.userData.dispose();
+});
+
+test('real skinned operator retains usable grips, crouch height and death/revive transitions', async () => {
+  const { asset, view } = await operatorFixture(), actor = { id: 'enemy-0', type: 'enemy', x: 0, z: 0, yaw: 0, hp: 100, aimUntil: 20 };
+  const root = createOperator(view, actor, asset), rig = root.userData;
+  for (const crouch of [false, true]) {
+    actor.crouch = crouch;
+    for (let i = 0; i < 60; i++) animateActorRig(root, actor, 1 / 60, i / 60 + 1);
+    for (const [side, y, z] of [['Right', -.095, -.01], ['Left', -.025, -.25]]) {
+      const target = new Vector3(0, y, z).applyMatrix4(rig.weapon.rifle.matrix); target.z += .035;
+      const actual = root.worldToLocal(rig.bones.get(`${side}Hand`).getWorldPosition(new Vector3()));
+      assert.ok(actual.distanceTo(target) < .015, `${side} wrist reaches the grip (crouch=${crouch}, error=${actual.distanceTo(target).toFixed(3)}, actual=${actual.toArray()}, goal=${target.toArray()})`);
+    }
+    const head = rig.bones.get('Head').getWorldPosition(new Vector3());
+    assert.ok(head.y > (crouch ? .85 : 1.4) && head.y < (crouch ? 1.2 : 1.8));
+    for (const side of ['Left', 'Right']) assert.ok(Math.abs(rig.bones.get(`${side}Foot`).getWorldPosition(new Vector3()).y - .13) < .025, 'stationary stance keeps both boots grounded');
+    root.traverse(o => assert.ok(o.matrixWorld.elements.every(Number.isFinite)));
+  }
+  actor.hp = 0;
+  for (let i = 0; i < 90; i++) animateActorRig(root, actor, .05, 3 + i * .05);
+  assert.equal(rig.activeClip, 'death'); assert.ok(rig.bones.get('Head').getWorldPosition(new Vector3()).y < .6);
+  actor.hp = 50; actor.crouch = false;
+  for (let i = 0; i < 30; i++) animateActorRig(root, actor, .05, 8 + i * .05);
+  assert.equal(rig.activeClip, 'aim_idle'); assert.ok(rig.bones.get('Head').getWorldPosition(new Vector3()).y > 1.4);
+  rig.dispose();
+});
+
+test('missing or invalid character asset leaves procedural fallback available', async t => {
+  t.mock.method(console, 'warn', () => {});
+  for (const loader of [{ loadAsync: async () => { throw new Error('missing'); } }, { loadAsync: async () => ({ animations: [], scene: new Scene() }) }]) {
+    const library = new OperatorLibrary(loader); assert.deepEqual(await library.ready, ['operator model']);
+    assert.equal(library.create({}, { type: 'friend' }), null);
+  }
+  assert.equal(operatorClip({ hp: 100, crouch: true, aimUntil: 5 }, 0, 2), 'aim_crouch_idle');
+  assert.equal(operatorClip({ hp: 100, aimUntil: 1 }, 3.2, 2), 'ready_run');
+});
 
 test('two-bone poses preserve limb lengths for reachable, unreachable and degenerate goals', () => {
   const start = [.15, .8, 0];

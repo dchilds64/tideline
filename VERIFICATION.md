@@ -1,5 +1,14 @@
 # Verification record
 
+## Skinned operator replacement — November 6, 2026
+
+- Replaced the bodies of both teammates and armed enemies with the credited DanlyVostok tactical suit and selected Quaternius clips retargeted through the BAMEN source rig. The generated self-contained GLB is 5.09 MiB; no new npm dependencies or runtime network services are required.
+- `npm test`: 27/27 passing. New tests load the actual production GLB's geometry/skeleton/clips in Node (image decoding omitted), verify independently cloned skeletons and animation clocks, disposal without invalidating shared geometry, pause, wrist/grip reach within 1.5 cm in the checked aim poses, both stationary ankles at the ground reference, crouched head height, death/revival, animation selection and failed/invalid asset fallback. Existing complete escort, combat, navigation and weapon tests pass.
+- `npm run check:assets`: all 14 texture maps and the operator GLB pass checksum/provenance/self-containment checks. `npm run build`: successful. Three.js bundle now approximately 558 kB / 142 kB gzip; the non-fatal chunk-size advisory remains.
+- Browser observer scene uses the production renderer and character update code. Visually inspected ready/aim, walk, crouch, reload gesture, downed pose and revival. Corrected a floating source headset, support-hand reach and raised idle boot during this work. Screenshot: `artifacts/skinned-operators.jpg` (explicitly an observer verification scene).
+- Game deployment resolves local operator assets before enabling Deploy; windowed input and pause were exercised with no runtime errors logged. Automated in-app gameplay again advanced too slowly for a reliable fresh full mission playthrough. Observer controls advance only the isolated pose fixture; no such shortcut is present in the shipped game. This update has no new completed live rescue-to-extraction claim or GPU performance benchmark.
+- Limits: shared base model for all armed actors, approximate directional locomotion and grip/reload overlays, flat-ground stance locking, animated fall rather than physical ragdoll. The hostage, first-person hands and weapon are still procedural. The visible upgrade does not make the overall game photorealistic.
+
 ## Character motion update — November 6, 2026
 
 - `npm test`: 24/24 passing. Four new checks cover finite, fixed-length limb solving, ground-anchored stance and reachability from walking through sprint speeds at 20/60 FPS, settling after stopping, pause, turn wrapping, reset after repositioning, actual production-rig hand constraints, crouched head alignment and visible shot feedback at 20 FPS. Existing mission/navigation/combat tests still pass.

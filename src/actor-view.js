@@ -48,22 +48,7 @@ export function createActorRig(view, actor) {
     elbow: view.mesh(new THREE.SphereGeometry(.063, 12, 10), cloth, 0, 0, 0, upper),
     hand: view.rounded(.095, .12, .12, 0, 0, 0, hostage ? skin : black, upper, .035),
   }));
-  const rifle = new THREE.Group(); upper.add(rifle);
-  let magazine, flash, spare;
-  if (!hostage) {
-    const metal = view.mat(0x293333, .45, { metalness: .65 });
-    view.rounded(.075, .105, .24, 0, .015, -.075, metal, rifle, .01);
-    view.rounded(.06, .13, .19, 0, .015, .12, black, rifle, .02);
-    view.rounded(.075, .085, .25, 0, .025, -.3, metal, rifle, .012);
-    view.rounded(.055, .13, .07, 0, -.095, -.01, black, rifle, .01).rotation.x = -.2;
-    magazine = view.rounded(.055, .16, .095, 0, -.11, -.15, metal, rifle, .01); magazine.rotation.x = -.12;
-    view.cylinder(.018, .018, .2, 0, .04, -.51, metal, rifle).rotation.x = Math.PI / 2;
-    view.cylinder(.029, .029, .16, 0, .04, -.66, black, rifle).rotation.x = Math.PI / 2;
-    view.rounded(.065, .06, .095, 0, .105, -.065, black, rifle, .01);
-    for (const x of [-.042, .042]) for (let i = 0; i < 4; i++) view.box(.006, .025, .025, x, .035, -.21 - i * .05, black, rifle);
-    flash = view.mesh(new THREE.ConeGeometry(.065, .17, 5), new THREE.MeshBasicMaterial({ color: 0xffd694 }), 0, .04, -.8, rifle); flash.rotation.x = -Math.PI / 2; flash.visible = false;
-    spare = view.rounded(.055, .16, .095, 0, 0, 0, metal, upper, .01); spare.visible = false;
-  }
+  const { rifle, magazine, flash, spare } = hostage ? { rifle: new THREE.Group() } : createActorWeapon(view, upper);
   root.userData = { upper, pelvis, rifle, legs, arms, magazine, flash, spare, hostage, motion: createActorMotion(actor) };
   animateActorRig(root, actor, 0, 0);
   return root;
@@ -78,6 +63,7 @@ function segment(mesh, from, to) {
 function grip(rifle, x, y, z) { return point.set(x, y, z).applyMatrix4(rifle.matrix).toArray(); }
 
 export function animateActorRig(root, actor, dt, time) {
+  if (root.userData.update) return root.userData.update(actor, dt, time);
   const rig = root.userData, m = updateActorMotion(rig.motion, actor, dt, time);
   root.position.set(actor.x, m.fall * .2, actor.z); root.rotation.set(0, m.yaw, m.fall * Math.PI / 2);
   // Crouch keeps the head aligned with the simulation's lowered hit volume.
@@ -124,4 +110,25 @@ export function animateActorRig(root, actor, dt, time) {
     arm.hand.position.fromArray(pose.end); arm.hand.rotation.copy(rifle.rotation);
     if (arm.side < 0 && rig.spare) rig.spare.position.fromArray(pose.end);
   });
+}
+
+export function createActorWeapon(view, parent) {
+  const black = view.mat(0x222d2c);
+  const rifle = new THREE.Group(); parent.add(rifle);
+  let magazine, flash, spare;
+  {
+    const metal = view.mat(0x293333, .45, { metalness: .65 });
+    view.rounded(.075, .105, .24, 0, .015, -.075, metal, rifle, .01);
+    view.rounded(.06, .13, .19, 0, .015, .12, black, rifle, .02);
+    view.rounded(.075, .085, .25, 0, .025, -.3, metal, rifle, .012);
+    view.rounded(.055, .13, .07, 0, -.095, -.01, black, rifle, .01).rotation.x = -.2;
+    magazine = view.rounded(.055, .16, .095, 0, -.11, -.15, metal, rifle, .01); magazine.rotation.x = -.12;
+    view.cylinder(.018, .018, .2, 0, .04, -.51, metal, rifle).rotation.x = Math.PI / 2;
+    view.cylinder(.029, .029, .16, 0, .04, -.66, black, rifle).rotation.x = Math.PI / 2;
+    view.rounded(.065, .06, .095, 0, .105, -.065, black, rifle, .01);
+    for (const x of [-.042, .042]) for (let i = 0; i < 4; i++) view.box(.006, .025, .025, x, .035, -.21 - i * .05, black, rifle);
+    flash = view.mesh(new THREE.ConeGeometry(.065, .17, 5), new THREE.MeshBasicMaterial({ color: 0xffd694 }), 0, .04, -.8, rifle); flash.rotation.x = -Math.PI / 2; flash.visible = false;
+    spare = view.rounded(.055, .16, .095, 0, 0, 0, metal, parent, .01); spare.visible = false;
+  }
+  return { rifle, magazine, flash, spare };
 }
