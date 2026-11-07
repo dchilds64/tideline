@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createActorRig, animateActorRig } from './actor-view.js';
 import { SOLIDS, EXTRACT, HOSTAGE } from './world.js';
 import { weaponOrientation } from './weapon.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -259,47 +260,8 @@ export class GameView {
     }
   }
   character(actor) {
-    const g = new THREE.Group(), friendly = actor.type === 'friend', hostage = actor.type === 'hostage';
-    const upper = new THREE.Group(); g.add(upper);
-    const cloth = this.surfaces.fabric(hostage ? 0xb9b6a2 : friendly ? 0x66756a : 0x666052);
-    const vest = this.surfaces.fabric(friendly ? 0x394d49 : 0x3b4241), skin = this.mat(0xa9967f), black = this.mat(0x222d2c), helmet = this.surfaces.fabric(friendly ? 0x6a7865 : 0x464b46);
-    this.rounded(.47, .65, .3, 0, 1.16, 0, cloth, upper, .1);
-    if (!hostage) {
-      this.rounded(.51, .43, .35, 0, 1.22, 0, vest, upper, .05);
-      for (const x of [-.17, 0, .17]) {
-        this.rounded(.13, .18, .1, x, 1.14, -.22, helmet, upper);
-        this.box(.105, .025, .015, x, 1.17, -.28, vest, upper);
-      }
-      this.rounded(.37, .4, .19, 0, 1.23, .23, vest, upper, .06);
-      for (const x of [-.17, .17]) this.rounded(.09, .22, .33, x, 1.44, 0, vest, upper);
-      this.rounded(.48, .07, .33, 0, .9, 0, black, upper);
-    }
-    const head = this.mesh(new THREE.SphereGeometry(.18, 20, 16), skin, 0, 1.67, 0, upper); head.scale.set(.85, 1.15, .95);
-    this.limb(.065, .16, 0, 1.48, 0, skin, upper);
-    this.rounded(.055, .07, .065, 0, 1.66, -.16, skin, upper, .025);
-    if (!hostage) {
-      const cap = this.mesh(new THREE.SphereGeometry(.205, 24, 16, 0, Math.PI * 2, 0, Math.PI * .58), helmet, 0, 1.72, 0, upper);
-      this.box(.29, .08, .11, 0, 1.7, -.17, black, upper);
-      if (friendly) {
-        for (const x of [-.1, .1]) this.cylinder(.04, .04, .1, x, 1.79, -.24, black, upper).rotation.x = Math.PI / 2;
-        this.box(.14, .045, .018, .28, 1.34, -.04, this.mat(0xa6d9cc, .6, { emissive: 0x49877c, emissiveIntensity: .5 }), upper);
-      }
-      cap.castShadow = true;
-    }
-    const limbs = [];
-    for (const x of [-.16, .16]) {
-      const leg = new THREE.Group(); leg.position.set(x, .88, 0); g.add(leg);
-      this.limb(.105, .4, 0, -.175, 0, cloth, leg);
-      const knee = new THREE.Group(); knee.position.y = -.35; leg.add(knee);
-      this.limb(.09, .37, 0, -.175, 0, cloth, knee); this.rounded(.21, .15, .33, 0, -.43, -.035, black, knee, .045);
-      if (!hostage) this.rounded(.16, .15, .05, 0, -.035, -.1, helmet, knee, .04);
-      leg.userData.knee = knee; limbs.push(leg);
-      const arm = this.limb(.087, .55, x * 1.9, 1.18, hostage ? .05 : -.14, cloth, upper); arm.rotation.x = hostage ? -.15 : -.65;
-      this.rounded(.12, .13, .15, x * 1.9, .96, hostage ? .08 : -.3, black, upper, .045);
-    }
-    const rifle = new THREE.Group(); rifle.position.set(.19, 1.22, -.18); upper.add(rifle);
-    if (!hostage) { this.box(.11, .14, .7, 0, -.04, -.28, black, rifle); this.box(.045, .045, .35, 0, 0, -.77, black, rifle); }
-    g.userData = { limbs, upper, rifle }; this.scene.add(g); this.actorMeshes.set(actor.id, g); return g;
+    const mesh = createActorRig(this, actor);
+    this.scene.add(mesh); this.actorMeshes.set(actor.id, mesh); return mesh;
   }
   buildWeapon() {
     const g = new THREE.Group(); this.camera.add(g); this.gun = g;
@@ -347,7 +309,7 @@ export class GameView {
     g.traverse(m => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = false; m.frustumCulled = false; } });
   }
   bind(sim) {
-    this.kick = 0; this.flashTimer = 0;
+    this.kick = 0; this.flashTimer = 0; this.lastActorTime = sim.time;
     for (const mesh of this.actorMeshes.values()) { this.scene.remove(mesh); mesh.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); }
     this.actorMeshes.clear(); for (const actor of [...sim.friends, ...sim.enemies, sim.hostage]) this.character(actor);
     for (const effect of this.effects) { this.scene.remove(effect.mesh); effect.mesh.geometry.dispose(); effect.mesh.material.dispose(); } this.effects = [];
@@ -356,6 +318,8 @@ export class GameView {
     if (e.type === 'shot') {
       if (e.faction === 'player') { this.kick = 1; this.flashTimer = .045; }
       else {
+        const rig = this.actorMeshes.get(e.actorId);
+        if (rig) rig.userData.motion.recoil = 1;
         const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(e.from.x, e.from.y, e.from.z), new THREE.Vector3(e.to.x, e.to.y + (Math.random() - .5) * .4, e.to.z)]);
         const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: e.faction === 'friend' ? 0xb8cb9f : 0xffc18c, transparent: true, opacity: .65 })); this.scene.add(line); this.effects.push({ mesh: line, life: .06 });
       }
@@ -383,19 +347,10 @@ export class GameView {
       this.camera.position.set(28 + Math.sin(t * .035) * 3, 14, 31); this.camera.lookAt(0, 1, -3); this.camera.fov = 66; this.camera.updateProjectionMatrix(); this.torch.intensity = 0;
     }
     this.gun.visible = playingView;
+    const actorDt = Math.max(0, Math.min(.05, sim.time - this.lastActorTime)); this.lastActorTime = sim.time;
     for (const actor of [...sim.enemies, ...sim.friends, sim.hostage]) {
-      const mesh = this.actorMeshes.get(actor.id); if (!mesh) continue;
-      mesh.position.set(actor.x, actor.hp <= 0 ? .2 : 0, actor.z); mesh.rotation.y = actor.yaw;
-      mesh.rotation.z = actor.hp <= 0 ? Math.PI / 2 : 0;
-      const blend = Math.min(1, dt * 16), crouch = actor.hp > 0 && actor.crouch;
-      mesh.userData.upper.position.y = THREE.MathUtils.lerp(mesh.userData.upper.position.y, crouch ? -.63 : 0, blend);
-      mesh.userData.rifle.rotation.x = THREE.MathUtils.lerp(mesh.userData.rifle.rotation.x, actor.reload ? -.6 : 0, blend);
-      mesh.userData.limbs.forEach((leg, i) => {
-        const stride = actor.hp > 0 && actor.moving ? Math.sin(sim.time * 9 + i * Math.PI) * .4 : 0;
-        leg.position.y = THREE.MathUtils.lerp(leg.position.y, crouch ? .46 : .88, blend);
-        leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, crouch ? -1.2 : stride, blend);
-        leg.userData.knee.rotation.x = THREE.MathUtils.lerp(leg.userData.knee.rotation.x, crouch ? 2.1 : Math.max(0, -stride), blend);
-      });
+      const mesh = this.actorMeshes.get(actor.id);
+      if (mesh) animateActorRig(mesh, actor, actorDt, sim.time);
     }
     this.kick = Math.max(0, this.kick - dt * 9); this.flashTimer = Math.max(0, (this.flashTimer || 0) - dt);
     this.flash.visible = this.flashTimer > 0; this.flashLight.intensity = this.flashTimer > 0 ? 7 : 0;

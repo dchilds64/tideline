@@ -3,11 +3,88 @@ import assert from 'node:assert/strict';
 import { Simulation } from '../src/simulation.js';
 import { chooseCover, protects } from '../src/cover.js';
 import { weaponOrientation, shotDirection } from '../src/weapon.js';
-import { PerspectiveCamera, Vector3 } from 'three';
+import { createActorMotion, updateActorMotion, solveLimb, angleDifference } from '../src/animation.js';
+import { createActorRig, animateActorRig } from '../src/actor-view.js';
+import { GameView } from '../src/render.js';
+import { PerspectiveCamera, Vector3, Scene, MeshStandardMaterial } from 'three';
 import { SOLIDS, EXTRACT, HOSTAGE, blocked, moveBody, visible, findPath, dist } from '../src/world.js';
 
 const advance = (sim, seconds, input = {}) => { for (let t = 0; t < seconds; t += .05) sim.tick(.05, input); };
 const safeSim = () => { const sim = new Simulation(() => .5); sim.start(); sim.enemies.forEach(e => e.hp = 0); return sim; };
+
+test('two-bone poses preserve limb lengths for reachable, unreachable and degenerate goals', () => {
+  const start = [.15, .8, 0];
+  for (const goal of [[.15, .11, -.3], [2, 0, 0], start, [.15, .8, -1]]) {
+    const pose = solveLimb(start, goal, .43, .43);
+    const distance = (a, b) => Math.hypot(...a.map((v, i) => v - b[i]));
+    assert.ok([...pose.joint, ...pose.end].every(Number.isFinite));
+    assert.ok(Math.abs(distance(start, pose.joint) - .43) < 1e-8);
+    assert.ok(Math.abs(distance(pose.joint, pose.end) - .43) < 1e-8);
+    if (distance(start, goal) < .86 && distance(start, goal) > .00001) assert.ok(distance(pose.end, goal) < 1e-8);
+  }
+});
+
+test('feet stay anchored during stance and remain reachable from walk through sprint at 20 and 60 fps', () => {
+  for (const dt of [1 / 60, .05]) for (const speed of [1.8, 3.3, 5.4]) {
+    const actor = { id: 'friend-0', x: 0, z: 0, yaw: 0, hp: 100 }, motion = createActorMotion(actor);
+    let plantedFrames = 0;
+    for (let time = 0; time < 5; time += dt) {
+      const before = motion.feet.map(f => ({ ...f })); actor.z -= speed * dt;
+      updateActorMotion(motion, actor, dt, time);
+      motion.feet.forEach((foot, i) => {
+        if (before[i].progress === 1 && foot.progress === 1) {
+          assert.equal(foot.x, before[i].x); assert.equal(foot.z, before[i].z); plantedFrames++;
+        }
+        const target = motion.localFeet[i], pose = solveLimb([i ? .15 : -.15, motion.hip, 0], target, .43, .43);
+        assert.ok(Math.hypot(...target.map((v, j) => v - pose.end[j])) < .001, 'foot must reach its ground anchor');
+      });
+    }
+    assert.ok(plantedFrames > 0);
+    for (let t = 0; t < 2; t += dt) updateActorMotion(motion, actor, dt, 5 + t);
+    assert.ok(motion.feet.every(f => f.progress === 1), 'stopping settles both feet');
+    const feet = JSON.stringify(motion.feet);
+    for (let t = 0; t < 1; t += dt) updateActorMotion(motion, actor, dt, 7 + t);
+    assert.equal(JSON.stringify(motion.feet), feet, 'idle operators do not march in place');
+  }
+});
+
+test('actor presentation freezes on pause, turns by the shortest arc and resets after repositioning', () => {
+  const actor = { id: 'friend-1', x: 0, z: 0, yaw: Math.PI - .02, hp: 100 }, motion = createActorMotion(actor);
+  const before = JSON.stringify(motion); actor.crouch = true; actor.yaw = -Math.PI + .02;
+  updateActorMotion(motion, actor, 0, 1); assert.equal(JSON.stringify(motion), before);
+  updateActorMotion(motion, actor, .05, 1);
+  assert.ok(Math.abs(angleDifference(motion.yaw, actor.yaw)) < .001);
+  for (let t = 0; t < 1; t += .05) updateActorMotion(motion, actor, .05, t + 1);
+  assert.ok(motion.crouch > .999 && motion.hip < .44);
+  actor.x = 20; updateActorMotion(motion, actor, .05, 3);
+  assert.ok(motion.feet.every(f => Math.abs(f.x - actor.x) < .2));
+  assert.ok(motion.localFeet.flat().every(Number.isFinite));
+});
+
+test('rendered hands stay on weapon grips and crouched head matches the hit volume', () => {
+  // Exercise the production geometry without constructing a WebGL renderer.
+  const view = Object.create(GameView.prototype); view.scene = new Scene();
+  view.surfaces = { fabric: color => new MeshStandardMaterial({ color }) };
+  const actor = { id: 'friend-0', type: 'friend', x: 0, z: 0, yaw: 0, hp: 100, aimUntil: 10 };
+  const root = createActorRig(view, actor), rig = root.userData;
+  for (const crouch of [false, true]) for (const aim of [false, true]) for (const reload of [0, 2.8, 2, 1, .2]) {
+    actor.crouch = crouch; actor.aimUntil = aim ? 10 : 0; actor.reload = reload;
+    for (let i = 0; i < 60; i++) animateActorRig(root, actor, 1 / 60, 2 + i / 60);
+    const grip = new Vector3(0, -.095, -.01).applyMatrix4(rig.rifle.matrix);
+    assert.ok(rig.arms[1].hand.position.distanceTo(grip) < .001, 'firing hand remains attached during transitions and reload');
+    if (!reload) {
+      const support = new Vector3(0, -.025, -.34).applyMatrix4(rig.rifle.matrix);
+      assert.ok(rig.arms[0].hand.position.distanceTo(support) < .001, 'support hand reaches fore-end');
+    }
+    const headHeight = 1.67 + rig.upper.position.y;
+    assert.ok(Math.abs(headHeight - (crouch ? 1.02 : 1.65)) < .05);
+  }
+  rig.motion.recoil = 1; animateActorRig(root, actor, .05, 3);
+  assert.equal(rig.flash.visible, true, 'a shot remains visible for one frame even at 20 fps');
+  for (let i = 0; i < 5; i++) animateActorRig(root, actor, .05, 3 + i * .05);
+  assert.equal(rig.flash.visible, false);
+  root.traverse(o => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } });
+});
 
 test('compound entrances and holding room are reachable without clipping', () => {
   for (const from of [{ x: -3, z: 31 }, { x: -21, z: 6 }, { x: 22, z: 6 }]) {

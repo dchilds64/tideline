@@ -1,5 +1,14 @@
 # Verification record
 
+## Character motion update — November 6, 2026
+
+- `npm test`: 24/24 passing. Four new checks cover finite, fixed-length limb solving, ground-anchored stance and reachability from walking through sprint speeds at 20/60 FPS, settling after stopping, pause, turn wrapping, reset after repositioning, actual production-rig hand constraints, crouched head alignment and visible shot feedback at 20 FPS. Existing mission/navigation/combat tests still pass.
+- `npm run build`: successful; the existing Three.js chunk-size advisory remains. No new dependency or external asset was added.
+- Browser observer fixture used the production character meshes and animation code to inspect standing, walking, crouched and civilian poses. Corrected an overly bent standing posture and disconnected-looking joints during inspection. Screenshot: `artifacts/character-motion.jpg` (an observer test scene, not a mission screenshot).
+- Mission deployment, windowed controls, hold order, map/pause and graphics switching were exercised. No browser runtime errors were logged. The in-app browser advanced only a few seconds of simulation during much longer input sessions, including after reducing graphics and closing extra test tabs. A new full live mission could not be reliably completed in this session; its cause was not established. This is not a successful live-playthrough or performance claim. Earlier completed browser missions are recorded below.
+- The automated escort-to-extraction and combat tests pass, but do not substitute for a new full browser playthrough. Captured-mouse and subjective-audio limitations below still apply.
+- Character animation is presentation-only: collision, damage, navigation and detection rules are unchanged. New simulation fields only expose contact-ready timing and shooter identity to the renderer. The rig uses flat-ground procedural stepping, approximate magazine handling and an interpolated fall; no mocap, deforming skin, finger animation, terrain IK or physical ragdoll is implemented.
+
 ## Visual realism and immersion update — November 5, 2026
 
 - `npm test`: 20/20 passing; mission, navigation, combat and weapon-handling checks unchanged.

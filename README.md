@@ -55,7 +55,9 @@ Moonlight, cached shadows for static geometry under local lamps, and a shadow-ca
 
 Materials load from the repository before Deploy becomes available; missing maps fall back to neutral surfaces with a visible status message. All 14 images ship with the production build. Asset sources and licenses are recorded in [third-party assets](THIRD_PARTY_ASSETS.md).
 
-These are meaningful visual improvements, not photorealism. Characters and hands remain procedural with simple animation; reloads do not animate individual fingers or magazine handling. Wet surfaces reflect the sky environment and lights, not a complete reflected scene. Lamp shadows include static geometry; moon and flashlight shadows include moving actors. Navigation remains flat, and small decorative props are not new cover.
+Character movement now uses individual ground-anchored steps driven by actual travel, articulated knees and elbows, smoother turns, and a lowered crouch pose. Operators raise their rifles for visible contacts; both hands follow the weapon. Enemy reloads move the support hand between the fore-end, magazine well and belt. AI shots produce visible weapon recoil and a brief muzzle flash. The civilian has separate restrained and walking arm poses.
+
+These are incremental visual improvements, not photorealism. Characters and hands remain visibly procedural; there is no motion capture, skin deformation, facial animation, finger articulation, terrain-aware foot placement or physical ragdoll. The first-person reload is still a simplified weapon-lowering animation; third-person magazine handling is an approximation. Wet surfaces reflect the sky environment and lights, not a complete reflected scene. Lamp shadows include static geometry; moon and flashlight shadows include moving actors. Navigation remains flat, and small decorative props are not new cover.
 
 ## Weapon handling
 
@@ -78,7 +80,7 @@ The rendered view and shots share the same recoil, sway, and eye height, includi
 
 ## Scope and simplifications
 
-- Small authored map with original procedural models, basic limb animation, and CC0 scanned surface maps. No licensed military likenesses or voice recordings.
+- Small authored map with original procedural models, procedural limb solving and foot placement, and CC0 scanned surface maps. No licensed military likenesses or voice recordings.
 - Flat-ground, two-dimensional collision/navigation under a three-dimensional renderer. No jumping, climbing, swimming, prone stance, leaning, vehicles, or destructible scenery. Map limits are hard boundaries.
 - Hitscan weapons; no bullet drop, penetration, ricochets, suppression model, armor simulation, or complex wound model. Low cover helps through line-of-sight occlusion.
 - Enemies use finite-state behavior and chance-based shots after a visibility check. Their cover planning is local geometry-based selection, not coordinated squad tactics. They do not plan team flanking maneuvers; reserve magazines are unlimited. Reactions to incoming fire currently require a hit, not a near miss. Teammates engage automatically; there is no stealth hold-fire order.
@@ -94,7 +96,7 @@ npm run check:assets
 npm run build
 ```
 
-Twenty automated tests cover physical access through all approaches, collision and occlusion, hitscan, reload timing and finite reserves, enemy search without wall tracking, squad hold/regroup and navigation, complete escort and extraction, treatment/revival, failure, and restart. Cover tests additionally verify actual shelter at the stopped position, reservations, burst timing, magazine reloads, loss of sight mid-burst, withdrawal on injury, compromised-cover relocation, hearing while concealed, and crouched hit detection. Handling tests cover raising time, sprint recovery, movement settling, crouch support, exertion recovery, accumulated recoil, invalid fire, reset, and alignment between the rendered sight line and shot rays. The escort test isolates navigation by disabling enemies; combat and cover have separate tests.
+Twenty-four automated tests cover physical access through all approaches, collision and occlusion, hitscan, reload timing and finite reserves, enemy search without wall tracking, squad hold/regroup and navigation, complete escort and extraction, treatment/revival, failure, and restart. Cover tests additionally verify actual shelter at the stopped position, reservations, burst timing, magazine reloads, loss of sight mid-burst, withdrawal on injury, compromised-cover relocation, hearing while concealed, and crouched hit detection. Handling tests cover raising time, sprint recovery, movement settling, crouch support, exertion recovery, accumulated recoil, invalid fire, reset, and alignment between the rendered sight line and shot rays. Four presentation checks additionally cover limb lengths, planted-foot reachability, stop/pause behavior, smooth turning and repositioning, actual rig hand constraints, crouched head alignment and muzzle-flash visibility. The escort test isolates navigation by disabling enemies; combat and cover have separate tests.
 
 A real browser playthrough was completed through normal UI input using windowed controls: infiltration under live enemy fire, firing/reloading, injury treatment, hostage release, escort through the eastern breach, and successful extraction with both teammates operational. The result was 0:54 of simulation time, six threats stopped, and six player rounds fired. Pause/map and redeploy were also exercised. See [verification notes](VERIFICATION.md).
 
@@ -110,6 +112,8 @@ The visual update also passed a full live browser mission: 1:08, three player ro
 - `src/weapon.js`: shared aim transition, fatigue, sway, recoil, dispersion, and eye height.
 - `src/render.js`: Three.js world, characters, first-person weapon, lighting, post-processing and effects.
 - `src/appearance.js`: local surface loading, physical UV scale, boulder geometry, sky, wind-driven grass and static batching.
+- `src/animation.js`: ground-anchored gait, smooth actor motion and two-bone limb solver.
+- `src/actor-view.js`: character geometry, constrained weapon grips, crouch and reload poses.
 - `src/audio.js`: Web Audio synthesis and directional emitters.
 - `src/main.js`: input, UI, map, pause, and animation loop.
 - `tests/simulation.test.js`: deterministic simulation checks.

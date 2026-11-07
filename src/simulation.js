@@ -98,6 +98,7 @@ export class Simulation {
     // Every round, including the middle of a burst, needs a fresh muzzle ray.
     const muzzle = actor.crouch ? .85 : 1.4, targetHeight = target.crouch ? .78 : 1.2;
     if (!visible(actor, target, muzzle, targetHeight)) return;
+    actor.aimUntil = this.time + .25; // Visual ready pose only after a fresh visibility check.
     if (friendly) actor.cooldown -= dt;
     actor.yaw = Math.atan2(actor.x - target.x, actor.z - target.z);
     if (actor.cooldown > 0 || (!friendly && (actor.reload || !actor.ammo || actor.aimTime < .38))) return;
@@ -117,7 +118,7 @@ export class Simulation {
     const length = Math.hypot(aim.x - from.x, aim.y - from.y, aim.z - from.z);
     const direction = { x: (aim.x - from.x) / length, y: (aim.y - from.y) / length, z: (aim.z - from.z) / length };
     const range = wallDistance(from, direction, length);
-    this.emit('shot', { faction: friendly ? 'friend' : 'enemy', from, to: { x: from.x + direction.x * range, y: from.y + direction.y * range, z: from.z + direction.z * range }, hit: false });
+    this.emit('shot', { actorId: actor.id, faction: friendly ? 'friend' : 'enemy', from, to: { x: from.x + direction.x * range, y: from.y + direction.y * range, z: from.z + direction.z * range }, hit: false });
     this.noise(actor, 25, friendly ? 'friend' : 'enemy');
     if (hit) this.damage(target, friendly ? 24 : 9, actor);
   }
