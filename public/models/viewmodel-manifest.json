@@ -14,6 +14,14 @@
       "sha256": "4657bc61099b7cf92084c5481c0c6d19a1d8219c8ee8c08e546f9f823fec6946"
     },
     {
+      "url": "https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets/models/weapons/animated_reload_arms.glb",
+      "sha256": "062c8288a79ec91d033fafd4be23f6545b337e2cf642dda0cbcc6854b270cd1b"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets/models/weapons/smg45_rifle_arms.glb",
+      "sha256": "6ec3a961424096cc55df26ec5821bcc0827654e5e5d9e0f1e18d765e22311958"
+    },
+    {
       "url": "https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets/models/weapons/optics.glb",
       "sha256": "67ea0a365d519c32ed00543f81240696bdf7675de4fb4ab43cd7fa1f9933a82f"
     }
@@ -21,21 +29,43 @@
   "assets": [
     {
       "file": "public/models/first-person.glb",
-      "bytes": 2839520,
-      "sha256": "5444f19f699bcf381c4467df8abd36663a604a9c90b4a834b244204bfb70952a",
+      "bytes": 1351940,
+      "sha256": "3d7791833f63a871cc7df68e19f45d8c0756344243f6b038661b61a8904cc46b",
+      "license": "CC-BY-4.0",
+      "authors": [
+        "Firewarden3D",
+        "cktang88 (conversion)"
+      ],
+      "description": "Rifle only; removed fitted arm mesh, rig, animations and their unused textures. Decoded geometry."
+    },
+    {
+      "file": "public/models/hands.glb",
+      "bytes": 545308,
+      "sha256": "012b4a8aeadc2696942893522ac2d11ccfd70c0306653a0f7a2e4a576a6bf501",
       "license": "CC-BY-4.0",
       "authors": [
         "DJMaesen",
-        "Cransh",
-        "Firewarden3D",
-        "cktang88 (conversion, rig fitting)"
+        "AetherRadar / Operation Steel Tide (adaptation)",
+        "cktang88 (conversion)"
       ],
-      "description": "Embedded arm textures; decoded geometry; extended cropped upper sleeves; removed unused vertical-grip clip. Original grip pose retained."
+      "description": "Native runtime support forearm and finger rig; removed non-runtime full-arm audit mesh, duplicate sidearm mesh and animations. No vertex warping."
+    },
+    {
+      "file": "public/models/trigger-hand.glb",
+      "bytes": 406632,
+      "sha256": "dae2224e91de9352838bcb43f99a91ed6746dcab1cab65dab610098da3857bad",
+      "license": "CC-BY-4.0",
+      "authors": [
+        "DJMaesen",
+        "AetherRadar / Operation Steel Tide (adaptation)",
+        "cktang88 (conversion)"
+      ],
+      "description": "Original fixed rifle trigger-hand and sleeve pose; extracted right arm only. No vertex warping."
     },
     {
       "file": "public/models/reflex-sight.glb",
       "bytes": 880352,
-      "sha256": "a8caaeed7714bb47efe5f2a11a1b027031ee75a786ec731c649c26222d7d6c6c",
+      "sha256": "6624396aa5eb45da1f0c6475d7a2c9a9961b9a3f2c5a0895f19b8d967d19d25e",
       "license": "CC-BY-4.0",
       "authors": [
         "valterjherson1",

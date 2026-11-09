@@ -1,5 +1,13 @@
 # Verification record
 
+## Hand anatomy correction — November 8, 2026
+
+- The previous visual review was insufficient: passing wrist-attachment checks did not establish convincing hand anatomy. User screenshots exposed malformed thumbs and bulky sleeves. A neutral-lit source/production comparison reproduced the claw-like shapes in the fitted source mesh itself. Replaced it with DJMaesen's native support forearm/finger rig and a fixed trigger-hand grip, without vertex warping or sleeve extensions. Retained the rifle and optic. Four local assets now total 3.04 MiB.
+- The source pack also contains a non-runtime full-arm audit mesh. An intermediate integration of that mesh produced a sleeve spike during reload. A new production-geometry regression check failed on excessive vertex distance from the arm skeleton; selecting the runtime forearm corrected it. Downward elbow bending and a camera-relative shoulder attachment corrected an exposed sleeve opening. This guard catches gross deformation, not subjective realism.
+- `npm test`: **32/32 passing**. `npm run check:assets`: all maps and five GLBs pass checksum/provenance/self-containment checks. `npm run build`: successful with the existing non-fatal Three.js chunk-size advisory. No new package dependency or external runtime service.
+- Browser visual checks inspected ready, ADS, magazine withdrawal and reinsertion, completion and reset using the production renderer. The fixture completed an empty reload at 30/60. Evidence: `artifacts/corrected-hand-grip.png`. Live windowed controls fired five rounds (25/90), reloaded to 30/85, toggled the light, looked down, paused and restarted. No browser warning/error logs were recorded. Live evidence: `artifacts/corrected-hands-live.png`. Game left at a fresh paused mission at `http://127.0.0.1:5173/`.
+- Limits: fixed trigger fingers, approximate magazine/finger contact and authored reload movement, no motion capture or full mechanical simulation. No new full live rescue-to-extraction run, captured-mouse test, audio assessment or GPU benchmark for this visual correction. The old hand model is removed; the historical first-pass record below is not an endorsement of its anatomy.
+
 ## First-person hands and rifle — November 8, 2026
 
 - Replaced the normal first-person procedural model with credited CC BY gloved arms, rifle and micro optic, totaling 3.55 MiB in two self-contained GLBs. Source license records, immutable URLs and hashes are documented; preparation checks input hashes and uses only the existing Three.js dependency. The original procedural model remains the loading-failure fallback.

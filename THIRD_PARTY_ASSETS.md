@@ -20,7 +20,7 @@ The image files are unchanged from the provider. Runtime UV scaling, color tint,
 
 ## Skinned operator — November 6, 2026
 
-`public/models/operator.glb` replaces the procedural bodies of Rook, Vale and the armed enemies. It is a locally bundled, approximately 5.09 MiB GLB with embedded textures, a skin skeleton and 11 animation clips. The hostage and first-person arms/weapon remain procedural.
+`public/models/operator.glb` replaces the procedural bodies of Rook, Vale and the armed enemies. It is a locally bundled, approximately 5.09 MiB GLB with embedded textures, a skin skeleton and 11 animation clips. The hostage remains procedural; first-person assets are credited below.
 
 | Contribution | Creator / original work | License |
 | --- | --- | --- |
@@ -43,13 +43,12 @@ The following assets are **CC BY 4.0**, verified against their creators' Sketchf
 
 | Work | Creator | Use |
 | --- | --- | --- |
-| [Fps arms](https://sketchfab.com/3d-models/fps-arms-9452ce4cddde4110a4fd73e555a8e412) | DJMaesen / bumstrum | Gloved arms, sleeves and textures |
-| [FPS AK-74m animations](https://sketchfab.com/3d-models/fps-ak-74m-animations-94be8385c402474cacd39bc096c6ca14) | Cransh / ccransh | Arm rig and grip template |
+| [fps animated smg](https://sketchfab.com/3d-models/fps-animated-smg-ea3dad7478624495a5a46f40127b0579) | DJMaesen | Native gloved hands, support-arm rig, sleeves and textures |
 | [M4A1](https://sketchfab.com/3d-models/m4a1-40d8ef818c7549a896371cbb1f64fec6) | Firewarden3D / Firewarden | Rifle geometry and textures |
 | [Generic Red Dot Scope / Rifle Attachment Lowpoly](https://sketchfab.com/3d-models/generic-red-dot-scope-rifle-attachment-lowpoly-8bf2794c30d04fa0aed1e3df92cd8a9e) | valterjherson1 | Micro red-dot sight geometry and textures |
 
-[License terms: CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Source conversion, rig fitting, AO baking and removal of optic branding are credited to [cktang88 / 3d-fps](https://github.com/cktang88/3d-fps/tree/130ac2a5c856401ec36e7d35afcfefe40c5801f4). Only credited asset data was reused; no upstream game code or Fab rifle animation set is included.
+[License terms: CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Hand asset adaptation is credited to AetherRadar / Operation Steel Tide. Source GLB conversion and optic branding removal are credited to [cktang88 / 3d-fps](https://github.com/cktang88/3d-fps/tree/130ac2a5c856401ec36e7d35afcfefe40c5801f4). Only credited asset data was reused; no upstream game code or Fab rifle animation set is included.
 
-`public/models/first-person.glb` (2.71 MiB) includes the rifle and skinned arms. `public/models/reflex-sight.glb` (0.84 MiB) contains only the micro optic, with the other optics excluded. Both are self-contained. Tideline embeds the external arm maps, decodes compressed geometry, extends cropped upper sleeves, removes the unused vertical-grip clip, changes material response, and adds original camera fitting, shoulder/wrist constraints, magazine reload choreography, reticle, riser and suppressor.
+Four self-contained GLBs total 3.04 MiB: `first-person.glb` (rifle only), `hands.glb` (native skinned support forearm), `trigger-hand.glb` (fixed right-hand grip and sleeve), and `reflex-sight.glb` (micro optic only). The rejected fitted arms and Cransh rig are removed from the shipping rifle, including their unused textures. Preparation selects the runtime forearm mesh, excludes the non-runtime full-arm audit mesh, removes unused animations and decodes compressed geometry. It does not warp vertices or extend sleeves. Tideline adjusts materials and adds camera/sight fitting, two-bone support-arm positioning, magazine reload choreography, reticle, riser and suppressor. Finger contact is approximate; trigger fingers stay in their authored pose.
 
-Exact immutable source URLs and SHA-256 checksums are in `public/models/viewmodel-manifest.json`. To reproduce, place its four source files in `artifacts/fp-source/` and run `node scripts/prepare-viewmodel.mjs`; input hashes are checked before conversion. Run `npm run check:assets` to check the shipped files. No runtime downloads are required.
+Exact immutable source URLs and SHA-256 checksums are in `public/models/viewmodel-manifest.json`. To reproduce, place its six source files in `artifacts/fp-source/` and run `node scripts/prepare-viewmodel.mjs`; input hashes are checked before conversion. The two old arm maps are read while unpacking the source rifle but pruned from the generated asset. Run `npm run check:assets` to check the shipped files. No runtime downloads are required.

@@ -16,7 +16,7 @@ async function model(name) {
   json.materials = json.materials.map(m => ({ name: m.name })); delete json.images; delete json.textures;
   return new GLTFLoader().parseAsync(JSON.stringify(json), '');
 }
-const templates = Promise.all([model('first-person'), model('reflex-sight')]).then(([rifle, optic]) => ({ rifle, optic }));
+const templates = Promise.all([model('first-person'), model('reflex-sight'), model('hands'), model('trigger-hand')]).then(([rifle, optic, arms, trigger]) => ({ rifle, optic, arms, trigger }));
 function scene() { const sim = new Simulation(() => .5); sim.start(); sim.enemies = []; sim.friends = []; return sim; }
 const position = object => object.getWorldPosition(new Vector3());
 
@@ -43,11 +43,12 @@ test('physical red dot remains on the shared sight/hitscan line through recoil a
 test('reload moves the magazine and wrist continuously, refills at completion and resets cleanly', async () => {
   const vm = createViewmodel(await templates), sim = scene(), p = sim.player;
   p.ammo = 0; vm.update(p); const seated = vm.magazine.position.clone(); sim.reload();
+  const forearmLength = position(vm.hand).distanceTo(position(vm.lower));
   let moved = false, hidden = false, previousHand, maxStep = 0;
   for (let i = 0; i < 150; i++) {
     sim.tick(1 / 60); vm.update(p);
-    const hand = position(vm.hand), wrist = position(vm.wristEnd);
-    assert.ok(hand.distanceTo(wrist) < .002, 'support glove stays attached to the sleeve');
+    const hand = position(vm.hand);
+    assert.ok(Math.abs(hand.distanceTo(position(vm.lower)) - forearmLength) < .002, 'wrist remains in the native elbow chain without stretching the forearm');
     if (previousHand) maxStep = Math.max(maxStep, hand.distanceTo(previousHand)); previousHand = hand;
     if (vm.magazine.position.distanceTo(seated) > .1) moved = true;
     if (!vm.magazine.visible) hidden = true;
@@ -66,7 +67,7 @@ test('reload moves the magazine and wrist continuously, refills at completion an
 
 test('viewmodel instances own their skeletons/materials and retain shared geometry on disposal', async () => {
   const source = await templates, first = createViewmodel(source), second = createViewmodel(source), sim = scene();
-  const original = source.rifle.scene.getObjectByName('FPArms'), one = first.model.getObjectByName('FPArms'), two = second.model.getObjectByName('FPArms');
+  const original = source.arms.scene.getObjectByName('LongGunReloadForearmsMesh'), one = first.armMesh, two = second.armMesh;
   assert.notEqual(one.skeleton, two.skeleton); assert.notEqual(one.material, two.material); assert.equal(one.geometry, original.geometry);
   let released = false; original.geometry.addEventListener('dispose', () => { released = true; });
   first.dispose(); second.update(sim.player); assert.equal(released, false); assert.ok(Number.isFinite(position(second.hand).x)); second.dispose();
@@ -79,4 +80,18 @@ test('missing or malformed first-person assets retain a playable procedural fall
       const library = new ViewmodelLibrary(loader); assert.deepEqual(await library.ready, ['first-person model']); assert.equal(library.create(), null);
     }
   } finally { console.warn = warn; }
+});
+
+test('rendered arm surface stays close to its anatomical joints through a reload', async () => {
+  const vm = createViewmodel(await templates), p = scene().player, point = new Vector3();
+  for (const progress of [0, .18, .32, .50, .76, .95]) {
+    p.reload = progress ? RELOAD_SECONDS * (1 - progress) : 0; vm.update(p);
+    const joints = vm.armMesh.skeleton.bones.map(position);
+    for (let i = 0; i < vm.armMesh.geometry.attributes.position.count; i++) {
+      vm.armMesh.getVertexPosition(i, point).applyMatrix4(vm.armMesh.matrixWorld);
+      const distance = Math.min(...joints.map(j => point.distanceTo(j)));
+      assert.ok(distance < .24, `arm vertex ${i} is ${distance.toFixed(3)}m from the rig at reload ${progress}; stretched sleeve spike`);
+    }
+  }
+  vm.dispose();
 });
