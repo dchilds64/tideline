@@ -38,7 +38,7 @@ export class FieldAudio {
     source.connect(filter); filter.connect(gain);
     if (position) {
       const pan = this.ctx.createPanner(); pan.panningModel = 'HRTF'; pan.distanceModel = 'inverse'; pan.refDistance = 4; pan.maxDistance = 90; pan.rolloffFactor = 1;
-      pan.setPosition(position.x, position.y || 1.4, position.z); gain.connect(pan); pan.connect(this.master);
+      pan.setPosition(position.x, position.y ?? 1.4, position.z); gain.connect(pan); pan.connect(this.master);
       source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); pan.disconnect(); };
     } else { gain.connect(this.master); source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); }; }
     source.start(now, Math.random()); source.stop(now + duration);
@@ -58,6 +58,10 @@ export class FieldAudio {
     if (e.type === 'reload-done') this.burst(.15, .3, 2200);
     if (e.type === 'ai-reload') this.burst(.2, .2, 1800, e.from);
     if (e.type === 'hit') this.tone(1050, .045, .035);
+    if (e.type === 'impact') {
+      const sound = { metal: [.11, .3, 4100], wood: [.09, .24, 1400], sand: [.15, .17, 650], stone: [.12, .25, 2400], concrete: [.12, .26, 2200] }[e.surface];
+      if (sound) this.burst(...sound, e.point);
+    }
     if (e.type === 'empty') this.burst(.035, .13, 3300);
     if (e.type === 'hurt') { this.tone(65, .25, .24); this.burst(.15, .3, 500); }
     if (e.type === 'radio') this.burst(.12, .07, 2800);

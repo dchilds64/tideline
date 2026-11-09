@@ -1,5 +1,13 @@
 # Verification record
 
+## Material-specific gunfire impacts — November 8, 2026
+
+- Replaced the generic expanding sphere with lit dust, concrete chips, wood splinters, short metal sparks and persistent surface marks. Player and missed AI rounds report the nearest hit face through the same box collision geometry used by ballistics. Sky misses and actor hits do not create surface marks. Impact audio is synthesized and positioned at the contact point, including ground height zero.
+- `npm test`: **36/36 passing**. Four new checks cover hit distance/material/outward normals, inside-building floors, sky misses, player and AI event endpoints, actor hits without wall marks, orientation, edge clipping, pause, expiry, restart and bounded resources. Existing mission, combat, navigation and hand/weapon tests pass. `npm run check:assets` and `npm run build` pass; the existing Three.js chunk-size advisory remains. No new dependencies or downloaded assets.
+- Browser fixture using production ballistics/rendering inspected concrete, wood, metal and sand. Six concrete rounds left six marks; metal sparks expired while the mark remained; restart cleared marks/fragments. Corrected dust that initially appeared self-lit by using scene-lit billboard meshes. Evidence: `artifacts/surface-metal-impact.png` (explicit inspection fixture). Runtime warning/error logs were empty.
+- Live windowed input deployed, looked down, fired six rounds (24/90), paused and restarted without runtime warnings/errors. Game left at a fresh paused mission at `http://127.0.0.1:5173/`. This pass did not repeat the complete live rescue, verify captured mouse input, audibly evaluate spatial sound or benchmark GPU performance.
+- Cosmetic approximation: no destructibility, penetration, ricochet or physical fragment collision. Up to 32 marks per material, 128 fragments and 24 dust puffs are retained. Oldest marks are reused. Rocks/sandbags emit debris without planar decals because their visible surfaces differ from collision boxes. Small decorative fittings inherit their parent collider's material classification.
+
 ## Hand anatomy correction — November 8, 2026
 
 - The previous visual review was insufficient: passing wrist-attachment checks did not establish convincing hand anatomy. User screenshots exposed malformed thumbs and bulky sleeves. A neutral-lit source/production comparison reproduced the claw-like shapes in the fitted source mesh itself. Replaced it with DJMaesen's native support forearm/finger rig and a fixed trigger-hand grip, without vertex warping or sleeve extensions. Retained the rifle and optic. Four local assets now total 3.04 MiB.

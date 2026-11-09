@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createActorRig, animateActorRig } from './actor-view.js';
 import { OperatorLibrary } from './operators.js';
 import { ViewmodelLibrary } from './viewmodel.js';
+import { ImpactEffects } from './impacts.js';
 import { SOLIDS, EXTRACT, HOSTAGE } from './world.js';
 import { weaponOrientation, RELOAD_SECONDS } from './weapon.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -27,7 +28,7 @@ export class GameView {
       if (this.boundSim && this.operators.template) this.bind(this.boundSim);
       return results.flat();
     });
-    this.buildWorld(); batchStaticWorld(this.scene); this.buildWeapon();
+    this.buildWorld(); batchStaticWorld(this.scene); this.buildWeapon(); this.impacts = new ImpactEffects(this.scene);
     this.composer = new EffectComposer(this.renderer);
     this.composer.renderTarget1.samples = this.composer.renderTarget2.samples = 2;
     this.composer.addPass(new RenderPass(this.scene, this.camera));
@@ -316,6 +317,7 @@ export class GameView {
     g.traverse(m => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = false; m.frustumCulled = false; } });
   }
   bind(sim) {
+    this.impacts.reset();
     this.boundSim = sim; this.kick = 0; this.flashTimer = 0; this.lastActorTime = sim.time;
     for (const mesh of this.actorMeshes.values()) {
       this.scene.remove(mesh);
@@ -344,10 +346,7 @@ export class GameView {
         const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: e.faction === 'friend' ? 0xb8cb9f : 0xffc18c, transparent: true, opacity: .65 })); this.scene.add(line); this.effects.push({ mesh: line, life: .06 });
       }
     }
-    if (e.type === 'impact') {
-      const mesh = this.mesh(new THREE.SphereGeometry(.07, 5, 4), new THREE.MeshBasicMaterial({ color: 0xc7bda0, transparent: true, opacity: .7 }), e.point.x, e.point.y, e.point.z);
-      this.effects.push({ mesh, life: .23, dust: true });
-    }
+    if (e.type === 'impact') this.impacts.emit(e);
   }
   render(sim, dt, mode) {
     dt = mode === 'playing' ? dt : 0;
@@ -376,6 +375,7 @@ export class GameView {
       this.camera.position.set(28 + Math.sin(t * .035) * 3, 14, 31); this.camera.lookAt(0, 1, -3); this.camera.fov = 66; this.camera.updateProjectionMatrix(); this.torch.intensity = 0;
     }
     this.gun.visible = playingView;
+    this.impacts.update(dt, this.camera.quaternion);
     const actorDt = Math.max(0, Math.min(.05, sim.time - this.lastActorTime)); this.lastActorTime = sim.time;
     for (const actor of [...sim.enemies, ...sim.friends, sim.hostage]) {
       const mesh = this.actorMeshes.get(actor.id);

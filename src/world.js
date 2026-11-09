@@ -84,6 +84,35 @@ export function wallDistance(origin, direction, max = 100) {
   const ground = direction.y < -1e-8 ? Math.max(0, -origin.y / direction.y) : max;
   return SOLIDS.reduce((d, b) => Math.min(d, rayBox(origin, direction, b, max)), Math.min(max, ground));
 }
+// Shot presentation uses the same collision boxes as ballistics. Return the
+// struck face as well as range; a miss must never create a floating decal.
+export function surfaceHit(origin, direction, max = 85) {
+  let distance = max, solid = null, ground = false;
+  if (direction.y < -1e-8) {
+    const t = -origin.y / direction.y;
+    if (t >= 0 && t < distance) { distance = t; ground = true; }
+  }
+  for (const box of SOLIDS) {
+    const t = rayBox(origin, direction, box, max);
+    if (t < distance) { distance = t; solid = box; ground = false; }
+  }
+  if (!solid && !ground) return null;
+  const point = Object.fromEntries(['x', 'y', 'z'].map(axis => [axis, origin[axis] + direction[axis] * distance]));
+  let normal = { x: 0, y: 1, z: 0 }, margin = Infinity;
+  if (solid) {
+    const bounds = { x: [solid.x - solid.w / 2, solid.x + solid.w / 2], y: [0, solid.h], z: [solid.z - solid.d / 2, solid.z + solid.d / 2] };
+    let closest = Infinity, face;
+    for (const axis of ['x', 'y', 'z']) for (const side of [0, 1]) {
+      const delta = Math.abs(point[axis] - bounds[axis][side]);
+      if (delta < closest) { closest = delta; face = axis; normal = { x: 0, y: 0, z: 0 }; normal[axis] = side ? 1 : -1; }
+    }
+    margin = Math.min(...Object.keys(bounds).filter(axis => axis !== face).flatMap(axis => [point[axis] - bounds[axis][0], bounds[axis][1] - point[axis]]));
+  }
+  const interior = !solid && ((point.x > 3 && point.x < 15 && point.z > -12 && point.z < -2) || (point.x > -14 && point.x < -2 && point.z > -11 && point.z < 1));
+  const surface = solid ? ({ crate: 'wood', machine: 'metal', sandbag: 'sand', rock: 'stone' }[solid.kind] || 'concrete') : interior ? 'concrete' : 'sand';
+  // Irregular rocks and sacks don't match their box precisely: use debris only.
+  return { distance, point, normal, surface, margin, decal: !solid || !['rock', 'sandbag'].includes(solid.kind), solidId: solid?.id || 'ground' };
+}
 export function visible(a, b, ay = 1.55, by = 1.25) {
   const length = Math.hypot(b.x - a.x, b.z - a.z, by - ay);
   if (length < .01) return true;

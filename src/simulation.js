@@ -1,4 +1,4 @@
-import { START, EXTRACT, HOSTAGE, PATROLS, dist, clamp, blocked, moveBody, visible, findPath, wallDistance } from './world.js';
+import { START, EXTRACT, HOSTAGE, PATROLS, dist, clamp, blocked, moveBody, visible, findPath, surfaceHit } from './world.js';
 import { chooseCover, protects } from './cover.js';
 import { createWeaponState, updateWeapon, shotDirection, kickWeapon, RELOAD_SECONDS } from './weapon.js';
 
@@ -42,7 +42,8 @@ export class Simulation {
     direction ??= shotDirection(p, this.random);
     p.ammo--; this.shots++; p.cooldown = .115; this.noise(p, 31);
     const origin = { x: p.x, y: p.weapon.eye, z: p.z };
-    let range = wallDistance(origin, direction, 85), victim = null, headshot = false;
+    const surface = surfaceHit(origin, direction, 85);
+    let range = surface?.distance ?? 85, victim = null, headshot = false;
     for (const enemy of this.enemies) {
       if (enemy.hp <= 0) continue;
       const hitVolumes = enemy.crouch ? [[1.02, .24, true], [.52, .37, false], [.3, .29, false]] : [[1.65, .24, true], [1.15, .37, false], [.55, .29, false]];
@@ -58,7 +59,7 @@ export class Simulation {
     const point = { x: origin.x + direction.x * range, y: origin.y + direction.y * range, z: origin.z + direction.z * range };
     this.emit('shot', { from: origin, to: point, faction: 'player', hit: !!victim });
     if (victim) { this.damage(victim, headshot ? 100 : 36, p); this.emit('hit', { killed: victim.hp <= 0 }); }
-    else if (range < 85) this.emit('impact', { point });
+    else if (surface) this.emit('impact', surface);
     kickWeapon(p, this.random);
     return true;
   }
@@ -117,10 +118,12 @@ export class Simulation {
     const aim = { x: target.x + (hit ? 0 : (this.random() < .5 ? -1 : 1) * (.6 + this.random() * .6)), y: targetHeight, z: target.z };
     const length = Math.hypot(aim.x - from.x, aim.y - from.y, aim.z - from.z);
     const direction = { x: (aim.x - from.x) / length, y: (aim.y - from.y) / length, z: (aim.z - from.z) / length };
-    const range = wallDistance(from, direction, length);
+    const surface = surfaceHit(from, direction, hit ? length : 85);
+    const range = surface?.distance ?? (hit ? length : 85);
     this.emit('shot', { actorId: actor.id, faction: friendly ? 'friend' : 'enemy', from, to: { x: from.x + direction.x * range, y: from.y + direction.y * range, z: from.z + direction.z * range }, hit: false });
     this.noise(actor, 25, friendly ? 'friend' : 'enemy');
-    if (hit) this.damage(target, friendly ? 24 : 9, actor);
+    if (surface) this.emit('impact', surface);
+    if (hit && range >= length) this.damage(target, friendly ? 24 : 9, actor);
   }
   enemyCombat(e, seen, dt) {
     e.moving = false;
