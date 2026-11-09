@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { createActorRig, animateActorRig } from './actor-view.js';
 import { OperatorLibrary } from './operators.js';
+import { ViewmodelLibrary } from './viewmodel.js';
 import { SOLIDS, EXTRACT, HOSTAGE } from './world.js';
-import { weaponOrientation } from './weapon.js';
+import { weaponOrientation, RELOAD_SECONDS } from './weapon.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -20,8 +21,9 @@ export class GameView {
     this.scene = new THREE.Scene(); this.scene.fog = new THREE.FogExp2(0x1b2530, .009);
     this.camera = new THREE.PerspectiveCamera(76, innerWidth / innerHeight, .05, 240); this.camera.rotation.order = 'YXZ'; this.scene.add(this.camera);
     this.actorMeshes = new Map(); this.effects = []; this.bob = 0; this.kick = 0;
-    this.materials = {}; this.surfaces = new SurfaceLibrary(this.renderer); this.operators = new OperatorLibrary();
-    this.assetsReady = Promise.all([this.surfaces.ready, this.operators.ready]).then(results => {
+    this.materials = {}; this.surfaces = new SurfaceLibrary(this.renderer); this.operators = new OperatorLibrary(); this.viewmodels = new ViewmodelLibrary();
+    this.assetsReady = Promise.all([this.surfaces.ready, this.operators.ready, this.viewmodels.ready]).then(results => {
+      this.installViewmodel();
       if (this.boundSim && this.operators.template) this.bind(this.boundSim);
       return results.flat();
     });
@@ -309,8 +311,8 @@ export class GameView {
     this.flashLight = new THREE.PointLight(0xffbc65, 0, 5); this.flashLight.position.set(0, .1, -.9); g.add(this.flashLight);
     this.torch = new THREE.SpotLight(0xe4eddb, 0, 35, .34, .65, 1.3); this.torch.position.set(.1, -.1, -.3); this.torch.target.position.set(0, 0, -25); this.camera.add(this.torch, this.torch.target);
     this.torch.castShadow = true; this.torch.shadow.mapSize.set(1024, 1024); this.torch.shadow.bias = -.0003; this.torch.shadow.normalBias = .015;
-    // Very low broad fill represents reflected skylight on the near weapon.
-    const weaponFill = new THREE.PointLight(0xaabccc, .14, 1.8, 1); weaponFill.position.set(-.3, .25, .15); this.camera.add(weaponFill);
+    // Soft near fill keeps dark weapon materials readable under the night sky.
+    const weaponFill = new THREE.PointLight(0xaabccc, 1.25, 1.8, 1); weaponFill.position.set(-.3, .25, -.15); this.camera.add(weaponFill);
     g.traverse(m => { if (m.isMesh) { m.castShadow = false; m.receiveShadow = false; m.frustumCulled = false; } });
   }
   bind(sim) {
@@ -322,6 +324,15 @@ export class GameView {
     }
     this.actorMeshes.clear(); for (const actor of [...sim.friends, ...sim.enemies, sim.hostage]) this.character(actor);
     for (const effect of this.effects) { this.scene.remove(effect.mesh); effect.mesh.geometry.dispose(); effect.mesh.material.dispose(); } this.effects = [];
+  }
+  installViewmodel() {
+    const model = this.viewmodels.create(); if (!model) return;
+    this.gun.removeFromParent();
+    const materials = new Set();
+    this.gun.traverse(o => { if (o.isMesh) { o.geometry.dispose(); materials.add(o.material); } });
+    materials.forEach(m => m.dispose());
+    this.viewmodel = model; this.gun = model.root; this.camera.add(this.gun);
+    this.flash = model.flash; this.flashLight = model.flashLight;
   }
   event(e) {
     if (e.type === 'shot') {
@@ -339,6 +350,7 @@ export class GameView {
     }
   }
   render(sim, dt, mode) {
+    dt = mode === 'playing' ? dt : 0;
     const t = performance.now() / 1000, p = sim.player, playingView = mode !== 'menu';
     if (playingView) {
       const w = p.weapon, orientation = weaponOrientation(p);
@@ -347,10 +359,18 @@ export class GameView {
       this.camera.position.y = w.eye;
       this.camera.rotation.set(orientation.pitch, orientation.yaw, 0);
       this.camera.fov = 76 - w.aim * 23 + (p.sprint ? 7 : 0); this.camera.updateProjectionMatrix();
-      const reload = p.reload ? Math.sin((1 - p.reload / 2.35) * Math.PI) : 0;
-      const x = .24 * (1 - w.aim), y = -.24 + w.aim * .09, z = -.32 + w.aim * .12, lowered = w.lowReady / .3;
-      this.gun.position.set(x + Math.sin(this.bob * .5) * .012 * w.motion * (1 - w.aim), y - reload * .22 - lowered * .1, z + this.kick * .05);
-      this.gun.rotation.set(this.kick * .035 - reload * .4 - lowered * .25, reload * .25, reload * -.55);
+      if (this.viewmodel) {
+        this.viewmodel.update(p, this.kick, this.flashTimer > 0);
+        // The light emitter is at the forward rail, ahead of hands and optic.
+        // A light near the eye incorrectly illuminates the back of the rifle.
+        this.torch.position.copy(this.viewmodel.muzzle.getWorldPosition(new THREE.Vector3()));
+        this.camera.worldToLocal(this.torch.position); this.torch.position.x += .035; this.torch.position.z -= .18;
+      } else {
+        const reload = p.reload ? Math.sin((1 - p.reload / RELOAD_SECONDS) * Math.PI) : 0;
+        const x = .24 * (1 - w.aim), y = -.24 + w.aim * .09, z = -.32 + w.aim * .12, lowered = w.lowReady / .3;
+        this.gun.position.set(x + Math.sin(this.bob * .5) * .012 * w.motion * (1 - w.aim), y - reload * .22 - lowered * .1, z + this.kick * .05);
+        this.gun.rotation.set(this.kick * .035 - reload * .4 - lowered * .25, reload * .25, reload * -.55);
+      }
       this.torch.intensity = p.light ? 38 : 0;
     } else {
       this.camera.position.set(28 + Math.sin(t * .035) * 3, 14, 31); this.camera.lookAt(0, 1, -3); this.camera.fov = 66; this.camera.updateProjectionMatrix(); this.torch.intensity = 0;

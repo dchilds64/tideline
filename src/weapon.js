@@ -1,4 +1,5 @@
 import { clamp } from './world.js';
+export const RELOAD_SECONDS = 2.35;
 
 // Game-tuned handling, in seconds and radians; not a measured firearm model.
 export const createWeaponState = () => ({

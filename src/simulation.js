@@ -1,6 +1,6 @@
 import { START, EXTRACT, HOSTAGE, PATROLS, dist, clamp, blocked, moveBody, visible, findPath, wallDistance } from './world.js';
 import { chooseCover, protects } from './cover.js';
-import { createWeaponState, updateWeapon, shotDirection, kickWeapon } from './weapon.js';
+import { createWeaponState, updateWeapon, shotDirection, kickWeapon, RELOAD_SECONDS } from './weapon.js';
 
 const copy = p => ({ x: p.x, z: p.z });
 export class Simulation {
@@ -29,7 +29,7 @@ export class Simulation {
   reload() {
     const p = this.player;
     if (this.status !== 'playing' || p.reload || p.ammo === 30 || p.reserve <= 0 || p.heal) return;
-    p.reload = 2.35; this.emit('reload');
+    p.reload = RELOAD_SECONDS; this.emit('reload');
   }
   heal() {
     const p = this.player;

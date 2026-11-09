@@ -31,3 +31,16 @@ if (json.buffers.some(b => b.uri) || json.images.some(i => i.uri)) throw new Err
 if (model.license !== 'CC-BY-4.0' || !json.asset.extras.source || !model.authors.length) throw new Error('Missing character provenance');
 for (const name of model.clips) if (!json.animations.some(a => a.name === name)) throw new Error(`Missing character clip: ${name}`);
 console.log(`Operator GLB verified: ${(glb.length / 1024 / 1024).toFixed(2)} MiB, ${json.animations.length} clips, embedded textures and skeleton.`);
+
+const firstPerson = JSON.parse(await readFile(path.join(root, 'public/models/viewmodel-manifest.json'), 'utf8'));
+for (const entry of firstPerson.assets) {
+  const filename = path.resolve(root, entry.file);
+  if (!filename.startsWith(path.join(root, 'public', 'models') + path.sep)) throw new Error('First-person model outside model directory');
+  const bytes = await readFile(filename);
+  if (bytes.length !== entry.bytes || createHash('sha256').update(bytes).digest('hex') !== entry.sha256) throw new Error(`First-person checksum mismatch: ${entry.file}`);
+  if (bytes.readUInt32LE(0) !== 0x46546c67 || bytes.readUInt32LE(4) !== 2 || bytes.readUInt32LE(8) !== bytes.length) throw new Error(`Invalid GLB: ${entry.file}`);
+  const asset = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)));
+  if (asset.buffers.some(b => b.uri) || asset.images.some(i => i.uri)) throw new Error(`External asset dependency: ${entry.file}`);
+  if (entry.license !== 'CC-BY-4.0' || !entry.authors.length || !asset.asset.extras.source) throw new Error('Missing first-person provenance');
+  console.log(`${entry.file} verified: ${(bytes.length / 1048576).toFixed(2)} MiB, embedded maps and geometry.`);
+}

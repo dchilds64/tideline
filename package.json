@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node tests/simulation.test.js",
+    "test": "node --test tests/simulation.test.js tests/viewmodel.test.js",
     "check:assets": "node scripts/check-assets.mjs"
   },
   "dependencies": { "three": "0.170.0" },

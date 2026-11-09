@@ -1,0 +1,47 @@
+{
+  "revision": "130ac2a5c856401ec36e7d35afcfefe40c5801f4",
+  "sources": [
+    {
+      "url": "https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets/models/fp/m4a1.glb",
+      "sha256": "f66a03a316e8ac6a1505b21c3c7cf8ad4672fccaf1ce947a9ea5ed33600364fc"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets/models/fp/arms_normal.webp",
+      "sha256": "0500bdd5e6045621d980105cc281312dd6d7fc66a6649ddbe632fea802dba881"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets/models/fp/arms_basecolor.webp",
+      "sha256": "4657bc61099b7cf92084c5481c0c6d19a1d8219c8ee8c08e546f9f823fec6946"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/cktang88/3d-fps/130ac2a5c856401ec36e7d35afcfefe40c5801f4/public/assets/models/weapons/optics.glb",
+      "sha256": "67ea0a365d519c32ed00543f81240696bdf7675de4fb4ab43cd7fa1f9933a82f"
+    }
+  ],
+  "assets": [
+    {
+      "file": "public/models/first-person.glb",
+      "bytes": 2839520,
+      "sha256": "5444f19f699bcf381c4467df8abd36663a604a9c90b4a834b244204bfb70952a",
+      "license": "CC-BY-4.0",
+      "authors": [
+        "DJMaesen",
+        "Cransh",
+        "Firewarden3D",
+        "cktang88 (conversion, rig fitting)"
+      ],
+      "description": "Embedded arm textures; decoded geometry; extended cropped upper sleeves; removed unused vertical-grip clip. Original grip pose retained."
+    },
+    {
+      "file": "public/models/reflex-sight.glb",
+      "bytes": 880352,
+      "sha256": "a8caaeed7714bb47efe5f2a11a1b027031ee75a786ec731c649c26222d7d6c6c",
+      "license": "CC-BY-4.0",
+      "authors": [
+        "valterjherson1",
+        "cktang88 (conversion)"
+      ],
+      "description": "Extracted micro red-dot sight only; decoded geometry. Source conversion removed branding."
+    }
+  ]
+}
